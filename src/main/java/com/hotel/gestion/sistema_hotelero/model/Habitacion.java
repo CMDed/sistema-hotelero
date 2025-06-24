@@ -17,15 +17,15 @@ public class Habitacion {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String numero; // Ejemplo: "101", "205"
+    private String numero;
 
     @Column(nullable = false)
-    private String tipo; // Ejemplo: "Simple", "Doble", "Suite"
+    private String tipo;
 
     @Column(nullable = false)
     private Double precioPorNoche;
 
     @Column(nullable = false)
-    private String estado; // "DISPONIBLE", "OCUPADA", "MANTENIMIENTO"
+    private String estado;
 
 }

@@ -17,13 +17,13 @@ public class Usuario {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String username; // Usuario para login
+    private String username;
 
     @Column(nullable = false)
-    private String password; // Contraseña encriptada
+    private String password;
 
     @Column(nullable = false)
-    private String rol; // "ADMIN" o "RECEPCIONISTA"
+    private String rol;
 
     @Column(nullable = false)
     private String nombres;

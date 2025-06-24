@@ -19,11 +19,11 @@ public class Reserva {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY) // Muchas reservas pueden ser de un cliente
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
-    @ManyToOne(fetch = FetchType.LAZY) // Muchas reservas pueden ser de una habitacion
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "habitacion_id", nullable = false)
     private Habitacion habitacion;
 
@@ -34,10 +34,10 @@ public class Reserva {
     private LocalDate fechaSalida;
 
     @Column(nullable = false)
-    private LocalDateTime horaEntrada; // Incluye fecha y hora
+    private LocalDateTime horaEntrada;
     
     @Column(nullable = false)
-    private LocalDateTime horaSalida; // Incluye fecha y hora
+    private LocalDateTime horaSalida;
 
     @Column(nullable = false)
     private Integer diasAPagar;
@@ -45,7 +45,6 @@ public class Reserva {
     @Column(nullable = false)
     private Double totalAPagar;
 
-    // Podríamos añadir un estado de reserva: "PENDIENTE", "CONFIRMADA", "CANCELADA", "CHECK_IN", "CHECK_OUT"
     private String estadoReserva;
 
 }

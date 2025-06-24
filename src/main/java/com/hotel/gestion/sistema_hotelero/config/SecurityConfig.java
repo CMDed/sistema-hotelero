@@ -5,12 +5,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig;
-import org.springframework.security.core.userdetails.User; // Importa User
-import org.springframework.security.core.userdetails.UserDetails; // Importa UserDetails
-import org.springframework.security.core.userdetails.UserDetailsService; // Importa UserDetailsService
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager; // Importa InMemoryUserDetailsManager
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
@@ -21,24 +21,33 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // Deshabilita CSRF (temporalmente para H2 y desarrollo simple)
-            .headers(headers -> headers.frameOptions(FrameOptionsConfig::sameOrigin)) // Habilita frames para H2 console
-            .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers(new AntPathRequestMatcher("/h2-console/**")).permitAll() // Permite acceso a H2 console
-                .requestMatchers(new AntPathRequestMatcher("/login")).permitAll() // Permite acceso a la página de login
-                .requestMatchers(new AntPathRequestMatcher("/css/**")).permitAll() // Permite acceso a archivos CSS
-                .requestMatchers(new AntPathRequestMatcher("/js/**")).permitAll()   // Permite acceso a archivos JS
-                .requestMatchers(new AntPathRequestMatcher("/images/**")).permitAll() // Permite acceso a imágenes
-                .anyRequest().authenticated() // Cualquier otra solicitud requiere autenticación
-            )
+            .csrf(csrf -> csrf.disable())
+            .headers(headers -> headers.frameOptions(FrameOptionsConfig::sameOrigin))
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(new AntPathRequestMatcher("/h2-console/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/login")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/css/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/js/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/images/**")).permitAll()
+
+
+                        .requestMatchers(new AntPathRequestMatcher("/clientes/registrar")).hasAnyAuthority("ROLE_ADMIN", "ROLE_RECEPCIONISTA")
+                        .requestMatchers(new AntPathRequestMatcher("/clientes/guardar")).hasAnyAuthority("ROLE_ADMIN", "ROLE_RECEPCIONISTA")
+                        .requestMatchers(new AntPathRequestMatcher("/clientes/buscarPorDni")).hasAnyAuthority("ROLE_ADMIN", "ROLE_RECEPCIONISTA")
+                        .requestMatchers(new AntPathRequestMatcher("/clientes/historial")).hasAnyAuthority("ROLE_ADMIN", "ROLE_RECEPCIONISTA")
+                        .requestMatchers(new AntPathRequestMatcher("/clientes/historial/buscar")).hasAnyAuthority("ROLE_ADMIN", "ROLE_RECEPCIONISTA")
+
+                        .requestMatchers(new AntPathRequestMatcher("/dashboard")).authenticated()
+                        .anyRequest().authenticated()
+                )
             .formLogin(form -> form
-                .loginPage("/login") // Especifica la página de login
-                .defaultSuccessUrl("/dashboard", true) // URL a la que ir después de un login exitoso
-                .permitAll() // Permite a todos acceder al formulario de login
+                .loginPage("/login")
+                .defaultSuccessUrl("/dashboard", true)
+                .permitAll()
             )
             .logout(logout -> logout
-                .logoutRequestMatcher(new AntPathRequestMatcher("/logout")) // URL para logout
-                .logoutSuccessUrl("/login?logout") // URL después de logout exitoso
+                .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+                .logoutSuccessUrl("/login?logout")
                 .permitAll()
             );
         return http.build();
@@ -52,15 +61,15 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
         UserDetails admin = User.builder()
-            .username("admin") // Usuario de prueba para el administrador
-            .password(passwordEncoder.encode("adminpass")) // Contraseña encriptada
-            .roles("ADMIN") // Rol
+            .username("admin")
+            .password(passwordEncoder.encode("adminpass"))
+            .roles("ADMIN")
             .build();
 
         UserDetails recepcionista = User.builder()
-            .username("recepcionista") // Usuario de prueba para el recepcionista
-            .password(passwordEncoder.encode("recepcionistapass")) // Contraseña encriptada
-            .roles("RECEPCIONISTA") // Rol
+            .username("recepcionista")
+            .password(passwordEncoder.encode("recepcionistapass"))
+            .roles("RECEPCIONISTA")
             .build();
 
         return new InMemoryUserDetailsManager(admin, recepcionista);
