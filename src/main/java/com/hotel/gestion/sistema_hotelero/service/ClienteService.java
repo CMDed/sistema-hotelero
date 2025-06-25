@@ -26,6 +26,10 @@ public class ClienteService {
         return clienteRepository.findByDni(dni);
     }
 
+    public boolean existeClientePorDni(String dni) {
+        return clienteRepository.findByDni(dni).isPresent();
+    }
+
     public List<Cliente> obtenerTodosLosClientes() {
         return clienteRepository.findAll();
     }

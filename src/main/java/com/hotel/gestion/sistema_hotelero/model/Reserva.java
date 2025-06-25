@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Data
 @NoArgsConstructor
@@ -31,20 +31,32 @@ public class Reserva {
     private LocalDate fechaInicio;
 
     @Column(nullable = false)
-    private LocalDate fechaSalida;
+    private LocalDate fechaFin;
 
     @Column(nullable = false)
-    private LocalDateTime horaEntrada;
-    
-    @Column(nullable = false)
-    private LocalDateTime horaSalida;
+    private LocalTime horaEntrada;
 
     @Column(nullable = false)
-    private Integer diasAPagar;
+    private LocalTime horaSalida;
 
     @Column(nullable = false)
-    private Double totalAPagar;
+    private Integer diasEstadia;
 
+    @Column(nullable = false)
+    private Double totalPagar;
+
+    @Column(nullable = false, length = 20)
     private String estadoReserva;
 
+    public Reserva(Cliente cliente, Habitacion habitacion, LocalDate fechaInicio, LocalDate fechaFin, LocalTime horaEntrada, LocalTime horaSalida, Integer diasEstadia, Double totalPagar, String estadoReserva) {
+        this.cliente = cliente;
+        this.habitacion = habitacion;
+        this.fechaInicio = fechaInicio;
+        this.fechaFin = fechaFin;
+        this.horaEntrada = horaEntrada;
+        this.horaSalida = horaSalida;
+        this.diasEstadia = diasEstadia;
+        this.totalPagar = totalPagar;
+        this.estadoReserva = estadoReserva;
+    }
 }

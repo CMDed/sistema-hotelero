@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historial de Cliente - Sistema Hotelero</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <style>
+    body { background-color: #f0f2f5; }
+    .navbar { margin-bottom: 20px; }
+    .container { margin-top: 20px; }
+    .form-section, .client-details-section { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.05); margin-bottom: 20px;}
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/dashboard">Sistema Hotelero</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" href="/dashboard">Dashboard</a>
+        </li>
+        <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_RECEPCIONISTA')">
+          <a class="nav-link" th:href="@{/clientes/registrar}">Registro Cliente</a>
+        </li>
+        <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_RECEPCIONISTA')">
+          <a class="nav-link" th:href="@{/reservas/crear}">Reservas</a>
+        </li>
+        <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_RECEPCIONISTA')">
+          <a class="nav-link" href="#">Habitaciones</a>
+        </li>
+        <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_RECEPCIONISTA')">
+          <a class="nav-link active" aria-current="page" th:href="@{/clientes/historial}">Historial Cliente</a>
+        </li>
+        <li class="nav-item" sec:authorize="hasAuthority('ROLE_ADMIN')">
+          <a class="nav-link" href="#">Gestión de Empleados</a>
+        </li>
+        <li class="nav-item" sec:authorize="hasAuthority('ROLE_ADMIN')">
+          <a class="nav-link" href="#">Reportes</a>
+        </li>
+      </ul>
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <span class="nav-link text-white me-2">Bienvenido, <span sec:authentication="name"></span></span>
+        </li>
+        <li class="nav-item">
+          <form th:action="@{/logout}" method="post">
+            <button type="submit" class="btn btn-outline-light">Cerrar Sesión</button>
+          </form>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="form-section">
+    <h2 class="mb-4">Buscar Historial de Cliente</h2>
+
+    <div th:if="${successMessage}" class="alert alert-success" role="alert">
+      <span th:text="${successMessage}"></span>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+      <span th:text="${errorMessage}"></span>
+    </div>
+
+    <form th:action="@{/clientes/historial}" method="get">
+      <div class="mb-3">
+        <label for="dni" class="form-label">DNI del Cliente:</label>
+        <input type="text" id="dni" name="dni" class="form-control" placeholder="Ingrese el DNI del cliente" required th:value="${param.dni}">
+      </div>
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary">Buscar Cliente</button>
+      </div>
+    </form>
+  </div>
+
+  <div th:if="${clienteEncontrado}" class="client-details-section">
+    <h3 class="mb-3">Datos del Cliente</h3>
+    <p><strong>Nombres:</strong> <span th:text="${clienteEncontrado.nombres}"></span></p>
+    <p><strong>Apellidos:</strong> <span th:text="${clienteEncontrado.apellidos}"></span></p>
+    <p><strong>DNI:</strong> <span th:text="${clienteEncontrado.dni}"></span></p>
+    <p><strong>Nacionalidad:</strong> <span th:text="${clienteEncontrado.nacionalidad}"></span></p>
+    <p><strong>Email:</strong> <span th:text="${clienteEncontrado.email}"></span></p>
+    <p><strong>Teléfono:</strong> <span th:text="${clienteEncontrado.telefono}"></span></p>
+
+    <hr> <h3 class="mt-4">Reservas del Cliente</h3>
+    <div th:if="${#lists.isEmpty(reservasCliente)}" class="alert alert-info">
+      Este cliente no tiene reservas registradas.
+    </div>
+    <div th:if="${not #lists.isEmpty(reservasCliente)}">
+      <table class="table table-striped table-hover">
+        <thead>
+        <tr>
+          <th>ID Reserva</th>
+          <th>Habitación</th>
+          <th>Fecha Entrada</th>
+          <th>Fecha Salida</th>
+          <th>Días Estadía</th>
+          <th>Total Pagar</th>
+          <th>Estado</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="reserva : ${reservasCliente}">
+          <td th:text="${reserva.id}"></td>
+          <td th:text="${reserva.habitacion?.numero + ' (' + reserva.habitacion?.tipo + ')'}"></td>
+          <td th:text="${#temporals.format(reserva.fechaInicio, 'dd-MM-yyyy') + ' ' + #temporals.format(reserva.horaEntrada, 'HH:mm')}"></td>
+          <td th:text="${#temporals.format(reserva.fechaFin, 'dd-MM-yyyy') + ' ' + #temporals.format(reserva.horaSalida, 'HH:mm')}"></td>
+          <td th:text="${reserva.diasEstadia}"></td>
+          <td th:text="${'S/.' + #numbers.formatDecimal(reserva.totalPagar, 1, 2)}"></td>
+          <td th:text="${reserva.estadoReserva}"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const dniFromUrl = urlParams.get('dni');
+      if (dniFromUrl) {
+          document.getElementById('dni').value = dniFromUrl;
+      }
+  });
+</script>
+</body>
+</html>

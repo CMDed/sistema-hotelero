@@ -24,22 +24,22 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/dashboard">Dashboard</a>
                 </li>
-                <li class="nav-item" sec:authorize="hasAnyAuthority('ADMIN', 'RECEPCIONISTA')">
+                <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_RECEPCIONISTA')">
                     <a class="nav-link active" aria-current="page" href="/clientes/registrar">Registro Cliente</a>
                 </li>
-                <li class="nav-item" sec:authorize="hasAnyAuthority('ADMIN', 'RECEPCIONISTA')">
-                    <a class="nav-link" href="#">Reservas</a>
+                <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_RECEPCIONISTA')">
+                    <a class="nav-link" th:href="@{/reservas/crear}">Reservas</a>
                 </li>
-                <li class="nav-item" sec:authorize="hasAnyAuthority('ADMIN', 'RECEPCIONISTA')">
+                <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_RECEPCIONISTA')">
                     <a class="nav-link" href="#">Habitaciones</a>
                 </li>
-                <li class="nav-item" sec:authorize="hasAnyAuthority('ADMIN', 'RECEPCIONISTA')">
-                    <a class="nav-link" href="/clientes/historial">Historial Cliente</a>
+                <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_RECEPCIONISTA')">
+                    <a class="nav-link" th:href="@{/clientes/historial}">Historial Cliente</a>
                 </li>
-                <li class="nav-item" sec:authorize="hasAuthority('ADMIN')">
+                <li class="nav-item" sec:authorize="hasAuthority('ROLE_ADMIN')">
                     <a class="nav-link" href="#">Empleados (ADMIN)</a>
                 </li>
-                <li class="nav-item" sec:authorize="hasAuthority('ADMIN')">
+                <li class="nav-item" sec:authorize="hasAuthority('ROLE_ADMIN')">
                     <a class="nav-link" href="#">Reportes (ADMIN)</a>
                 </li>
             </ul>

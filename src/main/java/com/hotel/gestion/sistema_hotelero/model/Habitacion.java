@@ -16,16 +16,22 @@ public class Habitacion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 10)
     private String numero;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String tipo;
 
     @Column(nullable = false)
     private Double precioPorNoche;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private String estado;
 
+    public Habitacion(String numero, String tipo, Double precioPorNoche, String estado) {
+        this.numero = numero;
+        this.tipo = tipo;
+        this.precioPorNoche = precioPorNoche;
+        this.estado = estado;
+    }
 }
