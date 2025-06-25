@@ -113,8 +113,8 @@
                             <option value="">-- Seleccione una habitación --</option>
                             <option th:each="hab : ${habitacionesDisponibles}"
                                     th:value="${hab.id}"
-                                    th:text="${hab.numero + ' (' + hab.tipo + ') - S/. ' + #numbers.formatDecimal(hab.precioPorNoche, 1, 2) + ' por noche'}">
-                            </option>
+                                    th:text="${hab.numero + ' (' + hab.tipo + ')'}"
+                                    th:data-precio="${hab.precioPorNoche}"> </option>
                         </select>
                     </div>
                     <div class="col-md-6">
@@ -174,23 +174,10 @@
         const totalPagarInput = document.getElementById('totalPagar');
         const totalPagarHidden = document.getElementById('totalPagarHidden');
 
-        const habitacionesData = {};
-        document.querySelectorAll('#habitacionSelect option').forEach(option => {
-            if (option.value) {
-                const id = option.value;
-                const text = option.textContent;
-                const priceMatch = text.match(/S\/\.\s*(\d+[,.]?\d*)\s*por noche/);
-                if (priceMatch) {
-                    let priceString = priceMatch[1].replace(',', '.');
-                    habitacionesData[id] = parseFloat(priceString);
-                    console.log(`DEBUG: Habitacion ID: ${id}, Texto: "${text}", Precio extraído (float): ${habitacionesData[id]}`);
-                } else {
-                    console.warn(`DEBUG: No se pudo parsear el precio para la opción: "${text}"`);
-                }
-            }
-        });
-        console.log("DEBUG: Datos de habitaciones cargados:", habitacionesData);
-
+        function obtenerPrecioDesdeSelect() {
+            const selectedOption = habitacionSelect.options[habitacionSelect.selectedIndex];
+            return parseFloat(selectedOption.dataset.precio);
+        }
 
         function calcularCostos() {
             console.log("DEBUG: calcularCostos() ejecutado.");
@@ -200,8 +187,8 @@
 
             console.log("DEBUG: Valores actuales: ", { habitacionId, fechaInicio, fechaFin });
 
-            const precio = habitacionesData[habitacionId];
-            if (precio !== undefined && precio !== null) {
+            const precio = obtenerPrecioDesdeSelect();
+            if (!isNaN(precio) && precio !== null) {
                 precioPorNocheDisplay.value = 'S/. ' + precio.toFixed(2);
                 console.log(`DEBUG: Precio por noche actualizado a: ${precioPorNocheDisplay.value}`);
             } else {

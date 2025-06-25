@@ -33,4 +33,8 @@ public class ClienteService {
     public List<Cliente> obtenerTodosLosClientes() {
         return clienteRepository.findAll();
     }
+
+    public Optional<Cliente> buscarClientePorId(Long id) {
+        return clienteRepository.findById(id);
+    }
 }

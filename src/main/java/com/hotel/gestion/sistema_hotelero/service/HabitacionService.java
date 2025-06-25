@@ -55,4 +55,8 @@ public class HabitacionService {
             System.out.println("Habitaciones inicializadas en la base de datos.");
         }
     }
+
+    public void eliminarHabitacion(Long id) {
+        habitacionRepository.deleteById(id);
+    }
 }

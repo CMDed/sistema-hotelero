@@ -1,10 +1,12 @@
 package com.hotel.gestion.sistema_hotelero.service;
 
 import com.hotel.gestion.sistema_hotelero.model.Cliente;
+import com.hotel.gestion.sistema_hotelero.model.Habitacion;
 import com.hotel.gestion.sistema_hotelero.model.Reserva;
 import com.hotel.gestion.sistema_hotelero.repository.ReservaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -23,13 +25,17 @@ public class ReservaService {
         this.habitacionService = habitacionService;
     }
 
+    @Transactional
     public Reserva guardarReserva(Reserva reserva) {
-        if (reserva.getHabitacion() != null && reserva.getHabitacion().getId() != null) {
-            habitacionService.actualizarEstadoHabitacion(reserva.getHabitacion().getId(), "OCUPADA");
+        Reserva savedReserva = reservaRepository.save(reserva);
+
+        if (savedReserva.getHabitacion() != null && savedReserva.getHabitacion().getId() != null) {
+            habitacionService.actualizarEstadoHabitacion(savedReserva.getHabitacion().getId(), "OCUPADA");
+            System.out.println("Habitación " + savedReserva.getHabitacion().getNumero() + " marcada como OCUPADA.");
         } else {
             System.err.println("Advertencia: No se pudo actualizar el estado de la habitación porque su ID es nulo.");
         }
-        return reservaRepository.save(reserva);
+        return savedReserva;
     }
 
     public Optional<Reserva> buscarReservaPorId(Long id) {
@@ -41,17 +47,14 @@ public class ReservaService {
     }
 
     public Integer calcularDiasEstadia(LocalDate fechaInicio, LocalDate fechaFin) {
-        if (fechaInicio == null || fechaFin == null) {
-            return 0;
-        }
-        if (fechaFin.isBefore(fechaInicio)) {
+        if (fechaInicio == null || fechaFin == null || fechaFin.isBefore(fechaInicio)) {
             return 0;
         }
         return (int) ChronoUnit.DAYS.between(fechaInicio, fechaFin);
     }
 
     public Double calcularTotalPagar(Double precioPorNoche, Integer diasEstadia) {
-        if (precioPorNoche == null || diasEstadia == null) {
+        if (precioPorNoche == null || diasEstadia == null || diasEstadia < 0) {
             return 0.0;
         }
         return precioPorNoche * diasEstadia;
@@ -62,5 +65,34 @@ public class ReservaService {
             return List.of();
         }
         return reservaRepository.findByCliente(cliente);
+    }
+
+    @Transactional
+    public boolean cancelarReserva(Long reservaId) {
+        Optional<Reserva> reservaOptional = reservaRepository.findById(reservaId);
+
+        if (reservaOptional.isPresent()) {
+            Reserva reserva = reservaOptional.get();
+
+            if ("ACTIVA".equals(reserva.getEstadoReserva())) {
+                reserva.setEstadoReserva("CANCELADA");
+                reservaRepository.save(reserva);
+
+                Habitacion habitacion = reserva.getHabitacion();
+                if (habitacion != null && habitacion.getId() != null) {
+                    habitacionService.actualizarEstadoHabitacion(habitacion.getId(), "DISPONIBLE");
+                    System.out.println("Habitación " + habitacion.getNumero() + " liberada por cancelación de reserva " + reservaId);
+                } else {
+                    System.err.println("Advertencia: Habitación asociada a la reserva " + reservaId + " es nula o sin ID.");
+                }
+                System.out.println("Reserva " + reservaId + " cancelada exitosamente.");
+                return true;
+            } else {
+                System.out.println("La reserva " + reservaId + " no está en estado ACTIVA, no se puede cancelar.");
+                return false;
+            }
+        }
+        System.out.println("Error: Reserva " + reservaId + " no encontrada para cancelar.");
+        return false;
     }
 }

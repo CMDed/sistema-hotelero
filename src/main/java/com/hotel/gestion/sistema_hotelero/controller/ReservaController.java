@@ -105,7 +105,7 @@ public class ReservaController {
             Double total = reservaService.calcularTotalPagar(reserva.getHabitacion().getPrecioPorNoche(), dias);
             reserva.setDiasEstadia(dias);
             reserva.setTotalPagar(total);
-            reserva.setEstadoReserva("CONFIRMADA");
+            reserva.setEstadoReserva("ACTIVA");
 
             reservaService.guardarReserva(reserva);
 
