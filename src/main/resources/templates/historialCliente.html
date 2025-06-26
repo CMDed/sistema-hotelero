@@ -40,10 +40,10 @@
         <li class="nav-item">
           <a class="nav-link" href="/dashboard">Dashboard</a>
         </li>
-        <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_RECEPCIONISTA')">
+        <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_RECEPCIONISTA')">
           <a class="nav-link" th:href="@{/clientes/registrar}">Registro Cliente</a>
         </li>
-        <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_RECEPCIONISTA')">
+        <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_RECEPCIONISTA')">
           <a class="nav-link" th:href="@{/reservas/crear}">Reservas</a>
         </li>
         <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_RECEPCIONISTA')">

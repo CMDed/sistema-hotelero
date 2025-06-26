@@ -75,8 +75,13 @@
                 <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_RECEPCIONISTA')">
                     <a class="nav-link" th:href="@{/clientes/historial}">Historial Cliente</a>
                 </li>
-                <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN')">
-                    <a class="nav-link" href="#">Gestión de Empleados</a>
+                <li class="nav-item dropdown" sec:authorize="hasAuthority('ROLE_ADMIN')">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownGestion" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Gestión de Empleados
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownGestion">
+                        <li><a class="dropdown-item" th:href="@{/empleados/registrar}">Registrar Nuevo</a></li>
+                        <li><a class="dropdown-item" th:href="@{/empleados/lista}">Ver Lista</a></li> </ul>
                 </li>
                 <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN')">
                     <a class="nav-link" href="#">Reportes</a>
