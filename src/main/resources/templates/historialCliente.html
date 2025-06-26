@@ -5,28 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Historial de Cliente - Sistema Hotelero</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> <style>
-  body { background-color: #f0f2f5; }
-  .navbar { margin-bottom: 20px; }
-  .container { margin-top: 20px; }
-  .form-section, .client-details-section { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.05); margin-bottom: 20px;}
-  .btn-cancelar {
-      background-color: #dc3545;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 0.9em;
-  }
-  .btn-cancelar:hover {
-      background-color: #c82333;
-  }
-  .badge {
-      font-size: 0.85em;
-      padding: 0.4em 0.8em;
-  }
-</style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body { background-color: #f0f2f5; }
+    .navbar { margin-bottom: 20px; }
+    .container { margin-top: 20px; }
+    .form-section, .client-details-section { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.05); margin-bottom: 20px;}
+    .btn-cancelar {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.9em;
+    }
+    .btn-cancelar:hover {
+        background-color: #c82333;
+    }
+    .badge {
+        font-size: 0.85em;
+        padding: 0.4em 0.8em;
+    }
+  </style>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -123,7 +124,8 @@
           <th>Días Estadía</th>
           <th>Total Pagar</th>
           <th>Estado</th>
-          <th>Acciones</th> </tr>
+          <th>Acciones</th>
+        </tr>
         </thead>
         <tbody>
         <tr th:each="reserva : ${reservasCliente}">
@@ -133,16 +135,34 @@
           <td th:text="${#temporals.format(reserva.fechaFin, 'dd-MM-yyyy') + ' ' + #temporals.format(reserva.horaSalida, 'HH:mm')}"></td>
           <td th:text="${reserva.diasEstadia}"></td>
           <td th:text="${'S/.' + #numbers.formatDecimal(reserva.totalPagar, 1, 'POINT', 2, 'COMMA')}"></td>
-          <td th:text="${reserva.estadoReserva}"></td>
           <td>
-            <form th:action="@{/clientes/cancelar-reserva}" method="post" class="d-inline"
-                  th:if="${reserva.estadoReserva == 'ACTIVA'}"> <input type="hidden" name="reservaId" th:value="${reserva.id}" />
-              <input type="hidden" name="clienteDni" th:value="${clienteEncontrado.dni}" /> <button type="submit" class="btn btn-danger btn-sm"
-                                                                                                    onclick="return confirm('¿Estás seguro de que quieres cancelar esta reserva? Esta acción liberará la habitación.');">
-                <i class="fas fa-times-circle"></i> Cancelar
-              </button>
-            </form>
-            <span th:unless="${reserva.estadoReserva == 'ACTIVA'}" class="badge bg-secondary">No Cancelable</span>
+             <span th:classappend="${reserva.estadoReserva == 'ACTIVA' ? 'bg-primary' :
+                                   (reserva.estadoReserva == 'PENDIENTE' ? 'bg-info' :
+                                   (reserva.estadoReserva == 'FINALIZADA' ? 'bg-success' :
+                                   'bg-danger'))}"
+                   class="badge" th:text="${reserva.estadoReserva}"></span>
+          </td>
+          <td>
+            <div th:if="${reserva.estadoReserva == 'ACTIVA' || reserva.estadoReserva == 'PENDIENTE'}">
+              <form th:action="@{/reservas/cancelar/{id}(id=${reserva.id})}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-danger btn-sm"
+                        onclick="return confirm('¿Estás seguro de que quieres CANCELAR esta reserva? Esta acción liberará la habitación.');">
+                  <i class="fas fa-times-circle"></i> Cancelar
+                </button>
+              </form>
+
+              <form th:if="${reserva.estadoReserva == 'ACTIVA'}" th:action="@{/reservas/finalizar/{id}(id=${reserva.id})}" method="post" style="display:inline; margin-left: 5px;">
+                <button type="submit" class="btn btn-success btn-sm"
+                        onclick="return confirm('¿Estás seguro de que quieres FINALIZAR esta reserva (realizar Check-out)?');">
+                  <i class="fas fa-check-circle"></i> Finalizar
+                </button>
+              </form>
+            </div>
+            <div th:unless="${reserva.estadoReserva == 'ACTIVA' || reserva.estadoReserva == 'PENDIENTE'}">
+                <span th:classappend="${reserva.estadoReserva == 'FINALIZADA' ? 'badge bg-success' : 'badge bg-danger'}">
+                    <span th:text="${reserva.estadoReserva}"></span>
+                </span>
+            </div>
           </td>
         </tr>
         </tbody>

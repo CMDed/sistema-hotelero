@@ -94,34 +94,33 @@ public class ReservaController {
             }
             reserva.setCliente(clienteOptional.get());
 
-            Optional<Habitacion> habitacionOptional = habitacionService.buscarHabitacionPorId(habitacionId);
-            if (habitacionOptional.isEmpty() || !habitacionOptional.get().getEstado().equals("DISPONIBLE")) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Error: Habitación no encontrada o no disponible.");
+            reserva.setHabitacion(new Habitacion(habitacionId));
+
+            if (reserva.getFechaInicio().isBefore(LocalDate.now())) {
+                redirectAttributes.addFlashAttribute("errorMessage", "La fecha de inicio de la reserva no puede ser anterior a la fecha actual.");
                 return "redirect:/reservas/crear";
             }
-            reserva.setHabitacion(habitacionOptional.get());
-
-            Integer dias = reservaService.calcularDiasEstadia(reserva.getFechaInicio(), reserva.getFechaFin());
-            Double total = reservaService.calcularTotalPagar(reserva.getHabitacion().getPrecioPorNoche(), dias);
-            reserva.setDiasEstadia(dias);
-            reserva.setTotalPagar(total);
 
             if (reserva.getFechaInicio().isEqual(LocalDate.now())) {
                 reserva.setEstadoReserva("ACTIVA");
-            } else if (reserva.getFechaInicio().isAfter(LocalDate.now())) {
-                reserva.setEstadoReserva("PENDIENTE");
             } else {
-                redirectAttributes.addFlashAttribute("errorMessage", "La fecha de inicio no puede ser anterior a la fecha actual.");
-                return "redirect:/reservas/crear";
+                reserva.setEstadoReserva("PENDIENTE");
             }
 
-
-            reservaService.guardarReserva(reserva);
+            reservaService.crearOActualizarReserva(reserva);
 
             redirectAttributes.addFlashAttribute("successMessage", "Reserva creada exitosamente!");
             return "redirect:/reservas/crear";
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error al crear la reserva: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error de datos: " + e.getMessage());
+            return "redirect:/reservas/crear";
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error de configuración: " + e.getMessage());
+            return "redirect:/reservas/crear";
+        }
+        catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error inesperado al crear la reserva: " + e.getMessage());
+            e.printStackTrace();
             return "redirect:/reservas/crear";
         }
     }
@@ -138,7 +137,7 @@ public class ReservaController {
 
     @PostMapping("/finalizar/{id}")
     public String finalizarReserva(@PathVariable Long id, RedirectAttributes redirectAttributes, @RequestHeader(value = "Referer", required = false) String referer) {
-        if (reservaService.cancelarReserva(id)) {
+        if (reservaService.finalizarReserva(id)) {
             redirectAttributes.addFlashAttribute("successMessage", "Reserva finalizada (check-out) exitosamente.");
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "No se pudo finalizar la reserva. Verifique su estado.");

@@ -34,4 +34,8 @@ public class Habitacion {
         this.precioPorNoche = precioPorNoche;
         this.estado = estado;
     }
+
+    public Habitacion(Long id) {
+        this.id = id;
+    }
 }

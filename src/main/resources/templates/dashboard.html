@@ -22,9 +22,14 @@
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
             margin-bottom: 20px;
             text-align: center;
+            height: 100%;
         }
         .card-body {
             padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
         .card-title {
             font-size: 1.25rem;
@@ -81,7 +86,8 @@
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="navbarDropdownGestion">
                         <li><a class="dropdown-item" th:href="@{/empleados/registrar}">Registrar Nuevo</a></li>
-                        <li><a class="dropdown-item" th:href="@{/empleados/lista}">Ver Lista</a></li> </ul>
+                        <li><a class="dropdown-item" th:href="@{/empleados/lista}">Ver Lista</a></li>
+                    </ul>
                 </li>
                 <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN')">
                     <a class="nav-link" href="#">Reportes</a>
@@ -104,20 +110,45 @@
 <div class="container mt-4">
     <h2 class="mb-4">Dashboard</h2>
 
-    <p class="lead">Bienvenido al sistema de gestión hotelera, <span th:text="${username}">Usuario</span>.</p>
+    <p class="lead">Bienvenido al sistema de gestión hotelera, <span sec:authentication="name">Usuario</span>.</p>
     <p>Tu rol es: <span th:each="role : ${roles}" th:text="${role.getAuthority()}" class="badge bg-primary me-1"></span></p>
 
-    <div class="row mt-5">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <i class="fas fa-bed icon-lg text-blue"></i>
-                    <h5 class="card-title">Total de Habitaciones</h5>
-                    <p class="card-text" th:text="${totalHabitaciones}"></p>
+    <h3 class="mt-5 mb-4">Resumen Operacional</h3>
+
+    <div sec:authorize="hasAuthority('ROLE_ADMIN')">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <i class="fas fa-bed icon-lg text-blue"></i>
+                        <h5 class="card-title">Total de Habitaciones</h5>
+                        <p class="card-text" th:text="${totalHabitaciones}"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <i class="fas fa-users icon-lg text-purple"></i>
+                        <h5 class="card-title">Total Clientes</h5>
+                        <p class="card-text" th:text="${totalClientes}"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <i class="fas fa-calendar-check icon-lg text-info"></i>
+                        <h5 class="card-title">Total Reservas Registradas</h5>
+                        <p class="card-text" th:text="${totalReservas}"></p>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+    </div>
+
+    <div sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_RECEPCIONISTA')">
+        <div class="row mt-4"> <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
                     <i class="fas fa-check-circle icon-lg text-green"></i>
@@ -126,77 +157,80 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <i class="fas fa-door-closed icon-lg text-red"></i>
-                    <h5 class="card-title">Habitaciones Ocupadas</h5>
-                    <p class="card-text" th:text="${habitacionesOcupadas}"></p>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <i class="fas fa-door-closed icon-lg text-red"></i>
+                        <h5 class="card-title">Habitaciones Ocupadas</h5>
+                        <p class="card-text" th:text="${habitacionesOcupadas}"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <i class="fas fa-tools icon-lg text-orange"></i>
+                        <h5 class="card-title">Habitaciones en Mantenimiento</h5>
+                        <p class="card-text" th:text="${habitacionesMantenimiento}"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <i class="fas fa-arrow-right-to-bracket icon-lg text-primary"></i>
+                        <h5 class="card-title">Check-ins Hoy</h5>
+                        <p class="card-text" th:text="${checkInsHoy}"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <i class="fas fa-arrow-right-from-bracket icon-lg text-secondary"></i>
+                        <h5 class="card-title">Check-outs Hoy</h5>
+                        <p class="card-text" th:text="${checkOutsHoy}"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <i class="fas fa-clock icon-lg text-warning"></i>
+                        <h5 class="card-title">Reservas Activas</h5>
+                        <p class="card-text" th:text="${reservasPendientes + reservasActivas}"></p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row mt-4">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <i class="fas fa-tools icon-lg text-orange"></i>
-                    <h5 class="card-title">Habitaciones en Mantenimiento</h5>
-                    <p class="card-text" th:text="${habitacionesMantenimiento}"></p>
+    <div sec:authorize="hasAuthority('ROLE_ADMIN')">
+        <h3 class="mt-5 mb-4">Métricas Administrativas</h3>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <i class="fas fa-users-cog icon-lg text-success-dark"></i>
+                        <h5 class="card-title">Total de Empleados</h5>
+                        <p class="card-text" th:text="${totalEmpleados ?: 0}"></p>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <i class="fas fa-users icon-lg text-purple"></i>
-                    <h5 class="card-title">Total Clientes</h5>
-                    <p class="card-text" th:text="${totalClientes}"></p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <i class="fas fa-calendar-check icon-lg text-info"></i>
-                    <h5 class="card-title">Total Reservas Registradas</h5>
-                    <p class="card-text" th:text="${totalReservas}"></p>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <i class="fas fa-dollar-sign icon-lg text-success"></i>
+                        <h5 class="card-title">Ingresos Totales</h5>
+                        <p class="card-text" th:text="${'S/ ' + #numbers.formatDecimal(ingresosTotales, 0, 'COMMA', 2, 'POINT')}"></p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="row mt-4">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <i class="fas fa-arrow-right-to-bracket icon-lg text-primary"></i>
-                    <h5 class="card-title">Check-ins Hoy</h5>
-                    <p class="card-text" th:text="${checkInsHoy}"></p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <i class="fas fa-arrow-right-from-bracket icon-lg text-secondary"></i>
-                    <h5 class="card-title">Check-outs Hoy</h5>
-                    <p class="card-text" th:text="${checkOutsHoy}"></p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <i class="fas fa-clock icon-lg text-warning"></i>
-                    <h5 class="card-title">Reservas Activas</h5>
-                    <p class="card-text" th:text="${reservasPendientes + reservasActivas}"></p>
-                </div>
-            </div>
-        </div>
-    </div>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>

@@ -93,4 +93,8 @@ public class EmpleadoService {
                     return true;
                 }).orElse(false);
     }
+
+    public long contarTodosLosEmpleados() {
+        return empleadoRepository.count();
+    }
 }

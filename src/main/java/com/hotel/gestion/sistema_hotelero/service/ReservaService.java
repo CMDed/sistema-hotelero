@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.Arrays;
 
 @Service
 public class ReservaService {
@@ -26,7 +27,36 @@ public class ReservaService {
     }
 
     @Transactional
-    public Reserva guardarReserva(Reserva reserva) {
+    public Reserva crearOActualizarReserva(Reserva reserva) {
+        if (reserva.getFechaInicio() == null || reserva.getFechaFin() == null) {
+            throw new IllegalArgumentException("Las fechas de inicio y fin de la reserva no pueden ser nulas.");
+        }
+        if (reserva.getFechaFin().isBefore(reserva.getFechaInicio())) {
+            throw new IllegalArgumentException("La fecha de fin de la reserva no puede ser anterior a la fecha de inicio.");
+        }
+
+        Integer diasEstadiaCalculado = calcularDiasEstadia(reserva.getFechaInicio(), reserva.getFechaFin());
+        reserva.setDiasEstadia(diasEstadiaCalculado);
+
+        if (reserva.getHabitacion() == null || reserva.getHabitacion().getId() == null) {
+            throw new IllegalArgumentException("La reserva debe estar asociada a una habitación válida con un ID.");
+        }
+        Optional<Habitacion> habitacionOptional = habitacionService.buscarHabitacionPorId(reserva.getHabitacion().getId());
+        if (habitacionOptional.isEmpty()) {
+            throw new IllegalArgumentException("Habitación con ID " + reserva.getHabitacion().getId() + " no encontrada.");
+        }
+        Habitacion habitacionAsociada = habitacionOptional.get();
+        reserva.setHabitacion(habitacionAsociada);
+
+        Double precioPorNoche = habitacionAsociada.getPrecioPorNoche();
+
+        if (precioPorNoche == null || precioPorNoche <= 0) {
+            throw new IllegalStateException("El precio por noche de la habitación " + habitacionAsociada.getNumero() + " no está definido o es cero.");
+        }
+
+        Double totalAPagarCalculado = calcularTotalPagar(precioPorNoche, diasEstadiaCalculado);
+        reserva.setTotalPagar(totalAPagarCalculado);
+
         Reserva savedReserva = reservaRepository.save(reserva);
 
         if (savedReserva.getHabitacion() != null && savedReserva.getHabitacion().getId() != null) {
@@ -45,19 +75,21 @@ public class ReservaService {
         return savedReserva;
     }
 
-    public Optional<Reserva> buscarReservaPorId(Long id) {
-        return reservaRepository.findById(id);
-    }
-
-    public List<Reserva> obtenerTodasLasReservas() {
-        return reservaRepository.findAll();
-    }
-
     public Integer calcularDiasEstadia(LocalDate fechaInicio, LocalDate fechaFin) {
-        if (fechaInicio == null || fechaFin == null || fechaFin.isBefore(fechaInicio)) {
+        if (fechaInicio == null || fechaFin == null) {
             return 0;
         }
-        return (int) ChronoUnit.DAYS.between(fechaInicio, fechaFin);
+        if (fechaFin.isBefore(fechaInicio)) {
+            return 0;
+        }
+
+        long daysBetween = ChronoUnit.DAYS.between(fechaInicio, fechaFin);
+
+        if (daysBetween == 0 && fechaInicio.equals(fechaFin)) {
+            return 1;
+        }
+
+        return (int) daysBetween;
     }
 
     public Double calcularTotalPagar(Double precioPorNoche, Integer diasEstadia) {
@@ -65,6 +97,43 @@ public class ReservaService {
             return 0.0;
         }
         return precioPorNoche * diasEstadia;
+    }
+
+    @Transactional
+    public boolean finalizarReserva(Long reservaId) {
+        Optional<Reserva> reservaOptional = reservaRepository.findById(reservaId);
+
+        if (reservaOptional.isPresent()) {
+            Reserva reserva = reservaOptional.get();
+
+            if ("ACTIVA".equals(reserva.getEstadoReserva())) {
+                reserva.setEstadoReserva("FINALIZADA");
+                reservaRepository.save(reserva);
+
+                Habitacion habitacion = reserva.getHabitacion();
+                if (habitacion != null && habitacion.getId() != null) {
+                    habitacionService.actualizarEstadoHabitacion(habitacion.getId(), "DISPONIBLE");
+                    System.out.println("Habitación " + habitacion.getNumero() + " liberada por finalización de reserva " + reservaId);
+                } else {
+                    System.err.println("Advertencia: Habitación asociada a la reserva " + reservaId + " es nula o sin ID.");
+                }
+                System.out.println("Reserva " + reservaId + " finalizada exitosamente.");
+                return true;
+            } else {
+                System.out.println("La reserva " + reservaId + " no está en estado ACTIVA para ser finalizada. Estado actual: " + reserva.getEstadoReserva());
+                return false;
+            }
+        }
+        System.out.println("Error: Reserva " + reservaId + " no encontrada para finalizar.");
+        return false;
+    }
+
+    public Optional<Reserva> buscarReservaPorId(Long id) {
+        return reservaRepository.findById(id);
+    }
+
+    public List<Reserva> obtenerTodasLasReservas() {
+        return reservaRepository.findAll();
     }
 
     public List<Reserva> obtenerReservasPorCliente(Cliente cliente) {
@@ -109,12 +178,12 @@ public class ReservaService {
 
     public long contarCheckInsHoy() {
         LocalDate hoy = LocalDate.now();
-        return reservaRepository.countByFechaInicioAndEstadoReserva(hoy, "ACTIVA");
+        return reservaRepository.countByFechaInicioAndEstadoReservaIn(hoy, Arrays.asList("ACTIVA", "FINALIZADA"));
     }
 
     public long contarCheckOutsHoy() {
         LocalDate hoy = LocalDate.now();
-        return reservaRepository.countByFechaFinAndEstadoReserva(hoy, "ACTIVA");
+        return reservaRepository.countByFechaFinAndEstadoReservaIn(hoy, Arrays.asList("ACTIVA", "FINALIZADA"));
     }
 
     public long contarReservasPorEstado(String estado) {
