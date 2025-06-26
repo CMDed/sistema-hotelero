@@ -2,6 +2,7 @@ package com.hotel.gestion.sistema_hotelero.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
@@ -15,6 +16,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
@@ -26,6 +28,7 @@ public class SecurityConfig {
                                 .requestMatchers("/dashboard").authenticated()
                                 .requestMatchers("/clientes/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_RECEPCIONISTA")
                                 .requestMatchers("/reservas/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_RECEPCIONISTA")
+                                .requestMatchers("/habitaciones").hasAnyAuthority("ROLE_ADMIN", "ROLE_RECEPCIONISTA")
                                 .anyRequest().authenticated()
                 )
                 .formLogin(formLogin ->
@@ -53,16 +56,16 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
         UserDetails admin = User.builder()
-            .username("admin")
-            .password(passwordEncoder.encode("adminpass"))
-            .roles("ADMIN")
-            .build();
+                .username("admin")
+                .password(passwordEncoder.encode("adminpass"))
+                .roles("ADMIN")
+                .build();
 
         UserDetails recepcionista = User.builder()
-            .username("recepcionista")
-            .password(passwordEncoder.encode("recepcionistapass"))
-            .roles("RECEPCIONISTA")
-            .build();
+                .username("recepcionista")
+                .password(passwordEncoder.encode("recepcionistapass"))
+                .roles("RECEPCIONISTA")
+                .build();
 
         return new InMemoryUserDetailsManager(admin, recepcionista);
     }

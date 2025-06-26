@@ -16,8 +16,5 @@ public class AuthLoginController {
         return "login";
     }
 
-    @GetMapping("/dashboard")
-    public String showDashboard() {
-        return "dashboard";
-    }
+
 }

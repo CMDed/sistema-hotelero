@@ -105,7 +105,16 @@ public class ReservaController {
             Double total = reservaService.calcularTotalPagar(reserva.getHabitacion().getPrecioPorNoche(), dias);
             reserva.setDiasEstadia(dias);
             reserva.setTotalPagar(total);
-            reserva.setEstadoReserva("ACTIVA");
+
+            if (reserva.getFechaInicio().isEqual(LocalDate.now())) {
+                reserva.setEstadoReserva("ACTIVA");
+            } else if (reserva.getFechaInicio().isAfter(LocalDate.now())) {
+                reserva.setEstadoReserva("PENDIENTE");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "La fecha de inicio no puede ser anterior a la fecha actual.");
+                return "redirect:/reservas/crear";
+            }
+
 
             reservaService.guardarReserva(reserva);
 
@@ -115,5 +124,25 @@ public class ReservaController {
             redirectAttributes.addFlashAttribute("errorMessage", "Error al crear la reserva: " + e.getMessage());
             return "redirect:/reservas/crear";
         }
+    }
+
+    @PostMapping("/cancelar/{id}")
+    public String cancelarReserva(@PathVariable Long id, RedirectAttributes redirectAttributes, @RequestHeader(value = "Referer", required = false) String referer) {
+        if (reservaService.cancelarReserva(id)) {
+            redirectAttributes.addFlashAttribute("successMessage", "Reserva cancelada exitosamente.");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "No se pudo cancelar la reserva.");
+        }
+        return "redirect:" + (referer != null ? referer : "/dashboard");
+    }
+
+    @PostMapping("/finalizar/{id}")
+    public String finalizarReserva(@PathVariable Long id, RedirectAttributes redirectAttributes, @RequestHeader(value = "Referer", required = false) String referer) {
+        if (reservaService.cancelarReserva(id)) {
+            redirectAttributes.addFlashAttribute("successMessage", "Reserva finalizada (check-out) exitosamente.");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "No se pudo finalizar la reserva. Verifique su estado.");
+        }
+        return "redirect:" + (referer != null ? referer : "/dashboard");
     }
 }

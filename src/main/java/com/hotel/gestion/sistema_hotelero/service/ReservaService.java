@@ -30,8 +30,15 @@ public class ReservaService {
         Reserva savedReserva = reservaRepository.save(reserva);
 
         if (savedReserva.getHabitacion() != null && savedReserva.getHabitacion().getId() != null) {
-            habitacionService.actualizarEstadoHabitacion(savedReserva.getHabitacion().getId(), "OCUPADA");
-            System.out.println("Habitación " + savedReserva.getHabitacion().getNumero() + " marcada como OCUPADA.");
+            if ("ACTIVA".equals(savedReserva.getEstadoReserva())) {
+                habitacionService.actualizarEstadoHabitacion(savedReserva.getHabitacion().getId(), "OCUPADA");
+                System.out.println("Habitación " + savedReserva.getHabitacion().getNumero() + " marcada como OCUPADA por reserva " + savedReserva.getEstadoReserva() + ".");
+            } else if ("PENDIENTE".equals(savedReserva.getEstadoReserva())) {
+                System.out.println("Reserva " + savedReserva.getId() + " para habitación " + savedReserva.getHabitacion().getNumero() + " creada como PENDIENTE. La habitación permanece DISPONIBLE.");
+            } else if ("CANCELADA".equals(savedReserva.getEstadoReserva()) || "FINALIZADA".equals(savedReserva.getEstadoReserva())) {
+                habitacionService.actualizarEstadoHabitacion(savedReserva.getHabitacion().getId(), "DISPONIBLE");
+                System.out.println("Habitación " + savedReserva.getHabitacion().getNumero() + " marcada como DISPONIBLE por reserva CANCELADA/FINALIZADA.");
+            }
         } else {
             System.err.println("Advertencia: No se pudo actualizar el estado de la habitación porque su ID es nulo.");
         }
@@ -74,7 +81,7 @@ public class ReservaService {
         if (reservaOptional.isPresent()) {
             Reserva reserva = reservaOptional.get();
 
-            if ("ACTIVA".equals(reserva.getEstadoReserva())) {
+            if ("ACTIVA".equals(reserva.getEstadoReserva()) || "PENDIENTE".equals(reserva.getEstadoReserva())) {
                 reserva.setEstadoReserva("CANCELADA");
                 reservaRepository.save(reserva);
 
@@ -88,11 +95,36 @@ public class ReservaService {
                 System.out.println("Reserva " + reservaId + " cancelada exitosamente.");
                 return true;
             } else {
-                System.out.println("La reserva " + reservaId + " no está en estado ACTIVA, no se puede cancelar.");
+                System.out.println("La reserva " + reservaId + " no está en estado que permita cancelación (ACTIVA/PENDIENTE), es: " + reserva.getEstadoReserva());
                 return false;
             }
         }
         System.out.println("Error: Reserva " + reservaId + " no encontrada para cancelar.");
         return false;
+    }
+
+    public long contarTotalReservas() {
+        return reservaRepository.count();
+    }
+
+    public long contarCheckInsHoy() {
+        LocalDate hoy = LocalDate.now();
+        return reservaRepository.countByFechaInicioAndEstadoReserva(hoy, "ACTIVA");
+    }
+
+    public long contarCheckOutsHoy() {
+        LocalDate hoy = LocalDate.now();
+        return reservaRepository.countByFechaFinAndEstadoReserva(hoy, "ACTIVA");
+    }
+
+    public long contarReservasPorEstado(String estado) {
+        return reservaRepository.countByEstadoReserva(estado);
+    }
+
+    public Double calcularIngresosTotales() {
+        List<Reserva> reservasFinalizadas = reservaRepository.findByEstadoReserva("FINALIZADA");
+        return reservasFinalizadas.stream()
+                .mapToDouble(Reserva::getTotalPagar)
+                .sum();
     }
 }

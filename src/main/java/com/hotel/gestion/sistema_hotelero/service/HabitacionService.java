@@ -33,6 +33,18 @@ public class HabitacionService {
         return habitacionRepository.findByEstado("DISPONIBLE");
     }
 
+    public long contarTotalHabitaciones() {
+        return habitacionRepository.count();
+    }
+
+    public List<Habitacion> obtenerHabitacionesOcupadas() {
+        return habitacionRepository.findByEstado("OCUPADA");
+    }
+
+    public List<Habitacion> obtenerHabitacionesEnMantenimiento() {
+        return habitacionRepository.findByEstado("MANTENIMIENTO");
+    }
+
     public Habitacion guardarHabitacion(Habitacion habitacion) {
         return habitacionRepository.save(habitacion);
     }

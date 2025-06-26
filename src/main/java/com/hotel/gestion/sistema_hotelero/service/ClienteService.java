@@ -37,4 +37,8 @@ public class ClienteService {
     public Optional<Cliente> buscarClientePorId(Long id) {
         return clienteRepository.findById(id);
     }
+
+    public long contarTotalClientes() {
+        return clienteRepository.count();
+    }
 }
