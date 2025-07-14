@@ -48,6 +48,9 @@ public class Reserva {
     @Column(nullable = false, length = 20)
     private String estadoReserva;
 
+    @Column(name = "fecha_salida_real")
+    private LocalDate fechaSalidaReal;
+
     public Reserva(Cliente cliente, Habitacion habitacion, LocalDate fechaInicio, LocalDate fechaFin, LocalTime horaEntrada, LocalTime horaSalida, Integer diasEstadia, Double totalPagar, String estadoReserva) {
         this.cliente = cliente;
         this.habitacion = habitacion;

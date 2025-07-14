@@ -90,7 +90,7 @@
                     </ul>
                 </li>
                 <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN')">
-                    <a class="nav-link" href="#">Reportes</a>
+                    <a class="nav-link" th:href="@{/reportes/generar}">Reportes</a>
                 </li>
             </ul>
             <ul class="navbar-nav">

@@ -11,8 +11,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.stream.Collectors;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class ReservaService {
@@ -65,9 +70,6 @@ public class ReservaService {
                 System.out.println("Habitación " + savedReserva.getHabitacion().getNumero() + " marcada como OCUPADA por reserva " + savedReserva.getEstadoReserva() + ".");
             } else if ("PENDIENTE".equals(savedReserva.getEstadoReserva())) {
                 System.out.println("Reserva " + savedReserva.getId() + " para habitación " + savedReserva.getHabitacion().getNumero() + " creada como PENDIENTE. La habitación permanece DISPONIBLE.");
-            } else if ("CANCELADA".equals(savedReserva.getEstadoReserva()) || "FINALIZADA".equals(savedReserva.getEstadoReserva())) {
-                habitacionService.actualizarEstadoHabitacion(savedReserva.getHabitacion().getId(), "DISPONIBLE");
-                System.out.println("Habitación " + savedReserva.getHabitacion().getNumero() + " marcada como DISPONIBLE por reserva CANCELADA/FINALIZADA.");
             }
         } else {
             System.err.println("Advertencia: No se pudo actualizar el estado de la habitación porque su ID es nulo.");
@@ -108,6 +110,7 @@ public class ReservaService {
 
             if ("ACTIVA".equals(reserva.getEstadoReserva())) {
                 reserva.setEstadoReserva("FINALIZADA");
+                reserva.setFechaSalidaReal(LocalDate.now());
                 reservaRepository.save(reserva);
 
                 Habitacion habitacion = reserva.getHabitacion();
@@ -117,7 +120,7 @@ public class ReservaService {
                 } else {
                     System.err.println("Advertencia: Habitación asociada a la reserva " + reservaId + " es nula o sin ID.");
                 }
-                System.out.println("Reserva " + reservaId + " finalizada exitosamente.");
+                System.out.println("Reserva " + reservaId + " finalizada exitosamente. Fecha de salida real: " + LocalDate.now());
                 return true;
             } else {
                 System.out.println("La reserva " + reservaId + " no está en estado ACTIVA para ser finalizada. Estado actual: " + reserva.getEstadoReserva());
@@ -183,7 +186,7 @@ public class ReservaService {
 
     public long contarCheckOutsHoy() {
         LocalDate hoy = LocalDate.now();
-        return reservaRepository.countByFechaFinAndEstadoReservaIn(hoy, Arrays.asList("ACTIVA", "FINALIZADA"));
+        return reservaRepository.countByFechaSalidaReal(hoy);
     }
 
     public long contarReservasPorEstado(String estado) {
@@ -191,9 +194,65 @@ public class ReservaService {
     }
 
     public Double calcularIngresosTotales() {
-        List<Reserva> reservasFinalizadas = reservaRepository.findByEstadoReserva("FINALIZADA");
-        return reservasFinalizadas.stream()
-                .mapToDouble(Reserva::getTotalPagar)
-                .sum();
+        return reservaRepository.sumTotalPagarForPendingActiveAndFinalizedReservas();
+    }
+
+    public List<Map<String, Object>> getIngresosPorPeriodo(LocalDate fechaInicio, LocalDate fechaFin) {
+
+        List<Reserva> reservasFinalizadas = reservaRepository.findByEstadoReservaAndFechaSalidaRealBetween("FINALIZADA", fechaInicio, fechaFin);
+
+        Map<LocalDate, Double> ingresosPorDia = reservasFinalizadas.stream()
+                .filter(r -> r.getFechaSalidaReal() != null)
+                .collect(Collectors.groupingBy(
+                        Reserva::getFechaSalidaReal,
+                        Collectors.summingDouble(Reserva::getTotalPagar)
+                ));
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (LocalDate date = fechaInicio; !date.isAfter(fechaFin); date = date.plusDays(1)) {
+            Double ingresos = ingresosPorDia.getOrDefault(date, 0.0);
+            result.add(Map.of("fecha", date.format(DateTimeFormatter.ISO_DATE), "ingresos", ingresos));
+        }
+
+        result.sort(Comparator.comparing(item -> LocalDate.parse((String) item.get("fecha"))));
+        return result;
+    }
+
+    public List<Map<String, Object>> getOcupacionPorPeriodo(LocalDate fechaInicio, LocalDate fechaFin, long totalHabitaciones) {
+        if (totalHabitaciones == 0) {
+            return new ArrayList<>();
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (LocalDate date = fechaInicio; !date.isAfter(fechaFin); date = date.plusDays(1)) {
+            long habitacionesOcupadas = reservaRepository.countActiveReservationsOnDate(date);
+
+            long habitacionesDisponibles = totalHabitaciones - habitacionesOcupadas;
+            double ocupacionPorcentaje = (double) habitacionesOcupadas / totalHabitaciones * 100;
+
+            result.add(Map.of(
+                    "fecha", date.format(DateTimeFormatter.ISO_DATE),
+                    "habitacionesOcupadas", habitacionesOcupadas,
+                    "habitacionesDisponibles", habitacionesDisponibles,
+                    "ocupacionPorcentaje", ocupacionPorcentaje
+            ));
+        }
+        return result;
+    }
+
+    public List<Map<String, Object>> getMovimientoPorPeriodo(LocalDate fechaInicio, LocalDate fechaFin) {
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (LocalDate date = fechaInicio; !date.isAfter(fechaFin); date = date.plusDays(1)) {
+            long checkIns = reservaRepository.countByFechaInicioAndEstadoReservaIn(date, Arrays.asList("ACTIVA", "FINALIZADA"));
+            long checkOuts = reservaRepository.countByFechaSalidaReal(date);
+
+            result.add(Map.of(
+                    "fecha", date.format(DateTimeFormatter.ISO_DATE),
+                    "checkIns", checkIns,
+                    "checkOuts", checkOuts
+            ));
+        }
+        return result;
     }
 }
