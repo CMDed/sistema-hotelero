@@ -24,7 +24,7 @@
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="#">Sistema Hotelero</a>
+        <a class="navbar-brand" href="#">Oasis Digital</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -39,11 +39,23 @@
                 <li class="nav-item" sec:authorize="hasRole('ROLE_RECEPCIONISTA')">
                     <a class="nav-link" th:href="@{/reservas/crear}">Reservas</a>
                 </li>
-                <li class="nav-item" sec:authorize="hasRole('ROLE_ADMIN')">
+                <li class="nav-item" sec:authorize="hasAnyRole('ROLE_ADMIN', 'ROLE_RECEPCIONISTA')">
                     <a class="nav-link active" th:href="@{/habitaciones}">Habitaciones</a>
                 </li>
-                <li class="nav-item" sec:authorize="hasRole('ROLE_RECEPCIONISTA')">
+                <li class="nav-item" sec:authorize="hasAnyRole('ROLE_RECEPCIONISTA', 'ROLE_ADMIN')">
                     <a class="nav-link" th:href="@{/clientes/historial}">Historial Cliente</a>
+                </li>
+                <li class="nav-item dropdown" sec:authorize="hasAnyRole('ROLE_ADMIN')">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownGestion" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Gestión de Empleados
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownGestion">
+                        <li><a class="dropdown-item" th:href="@{/empleados/registrar}">Registrar Nuevo</a></li>
+                        <li><a class="dropdown-item" th:href="@{/empleados/lista}">Ver Lista</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item" sec:authorize="hasAnyRole('ROLE_ADMIN')">
+                    <a class="nav-link" th:href="@{/reportes/generar}">Reportes</a>
                 </li>
             </ul>
             <ul class="navbar-nav">

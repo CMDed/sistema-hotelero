@@ -15,7 +15,7 @@
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/dashboard">Sistema Hotelero</a>
+        <a class="navbar-brand" href="/dashboard">Oasis Digital</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -31,7 +31,7 @@
                     <a class="nav-link active" aria-current="page" th:href="@{/reservas/crear}">Reservas</a>
                 </li>
                 <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_RECEPCIONISTA')">
-                    <a class="nav-link" href="#">Habitaciones</a>
+                    <a class="nav-link" th:href="@{/habitaciones}">Habitaciones</a>
                 </li>
                 <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_RECEPCIONISTA')">
                     <a class="nav-link" th:href="@{/clientes/historial}">Historial Cliente</a>

@@ -43,14 +43,14 @@ public class ReportesController {
         return reservaService.getIngresosPorPeriodo(fechaInicio, fechaFin);
     }
 
-    @GetMapping("/api/ocupacion")
+    /*@GetMapping("/api/ocupacion")
     @ResponseBody
     public List<Map<String, Object>> getOcupacionPorPeriodo(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
         long totalHabitaciones = habitacionService.contarTotalHabitaciones();
         return reservaService.getOcupacionPorPeriodo(fechaInicio, fechaFin, totalHabitaciones);
-    }
+    }*/
 
     @GetMapping("/api/movimiento")
     @ResponseBody
