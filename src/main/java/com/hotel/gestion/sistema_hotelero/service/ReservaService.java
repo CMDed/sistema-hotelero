@@ -4,6 +4,8 @@ import com.hotel.gestion.sistema_hotelero.model.Cliente;
 import com.hotel.gestion.sistema_hotelero.model.Habitacion;
 import com.hotel.gestion.sistema_hotelero.model.Reserva;
 import com.hotel.gestion.sistema_hotelero.repository.ReservaRepository;
+import com.hotel.gestion.sistema_hotelero.repository.ClienteRepository;
+import com.hotel.gestion.sistema_hotelero.repository.HabitacionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,11 +26,19 @@ public class ReservaService {
 
     private final ReservaRepository reservaRepository;
     private final HabitacionService habitacionService;
+    private final ClienteRepository clienteRepository;
+    private final HabitacionRepository habitacionRepository;
+    private final AuditoriaService auditoriaService;
 
     @Autowired
-    public ReservaService(ReservaRepository reservaRepository, HabitacionService habitacionService) {
+    public ReservaService(ReservaRepository reservaRepository, HabitacionService habitacionService,
+                          ClienteRepository clienteRepository, HabitacionRepository habitacionRepository,
+                          AuditoriaService auditoriaService) {
         this.reservaRepository = reservaRepository;
         this.habitacionService = habitacionService;
+        this.clienteRepository = clienteRepository;
+        this.habitacionRepository = habitacionRepository;
+        this.auditoriaService = auditoriaService;
     }
 
     @Transactional
@@ -46,11 +56,12 @@ public class ReservaService {
         if (reserva.getHabitacion() == null || reserva.getHabitacion().getId() == null) {
             throw new IllegalArgumentException("La reserva debe estar asociada a una habitación válida con un ID.");
         }
-        Optional<Habitacion> habitacionOptional = habitacionService.buscarHabitacionPorId(reserva.getHabitacion().getId());
-        if (habitacionOptional.isEmpty()) {
-            throw new IllegalArgumentException("Habitación con ID " + reserva.getHabitacion().getId() + " no encontrada.");
-        }
-        Habitacion habitacionAsociada = habitacionOptional.get();
+        Cliente cliente = clienteRepository.findById(reserva.getCliente().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Cliente con ID " + reserva.getCliente().getId() + " no encontrado."));
+        Habitacion habitacionAsociada = habitacionRepository.findById(reserva.getHabitacion().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Habitación con ID " + reserva.getHabitacion().getId() + " no encontrada."));
+
+        reserva.setCliente(cliente);
         reserva.setHabitacion(habitacionAsociada);
 
         Double precioPorNoche = habitacionAsociada.getPrecioPorNoche();
@@ -62,6 +73,7 @@ public class ReservaService {
         Double totalAPagarCalculado = calcularTotalPagar(precioPorNoche, diasEstadiaCalculado);
         reserva.setTotalPagar(totalAPagarCalculado);
 
+        boolean esNuevaReserva = (reserva.getId() == null);
         Reserva savedReserva = reservaRepository.save(reserva);
 
         if (savedReserva.getHabitacion() != null && savedReserva.getHabitacion().getId() != null) {
@@ -74,6 +86,23 @@ public class ReservaService {
         } else {
             System.err.println("Advertencia: No se pudo actualizar el estado de la habitación porque su ID es nulo.");
         }
+
+        if (esNuevaReserva) {
+            auditoriaService.registrarAccion(
+                    "CREACION_RESERVA",
+                    "Nueva reserva creada (ID: " + savedReserva.getId() + ") para cliente '" + savedReserva.getCliente().getNombres() + " " + savedReserva.getCliente().getApellidos() + "' en habitación " + savedReserva.getHabitacion().getNumero() + ". Estado: " + savedReserva.getEstadoReserva(),
+                    "Reserva",
+                    savedReserva.getId()
+            );
+        } else {
+            auditoriaService.registrarAccion(
+                    "ACTUALIZACION_RESERVA",
+                    "Reserva (ID: " + savedReserva.getId() + ") para cliente '" + savedReserva.getCliente().getNombres() + " " + savedReserva.getCliente().getApellidos() + "' en habitación " + savedReserva.getHabitacion().getNumero() + " actualizada. Nuevo estado: " + savedReserva.getEstadoReserva(),
+                    "Reserva",
+                    savedReserva.getId()
+            );
+        }
+
         return savedReserva;
     }
 
@@ -121,6 +150,13 @@ public class ReservaService {
                     System.err.println("Advertencia: Habitación asociada a la reserva " + reservaId + " es nula o sin ID.");
                 }
                 System.out.println("Reserva " + reservaId + " finalizada exitosamente. Fecha de salida real: " + LocalDate.now());
+
+                auditoriaService.registrarAccion(
+                        "FINALIZACION_RESERVA",
+                        "Reserva (ID: " + reserva.getId() + ") para cliente '" + reserva.getCliente().getNombres() + "' en habitación " + reserva.getHabitacion().getNumero() + " FINALIZADA.",
+                        "Reserva",
+                        reserva.getId()
+                );
                 return true;
             } else {
                 System.out.println("La reserva " + reservaId + " no está en estado ACTIVA para ser finalizada. Estado actual: " + reserva.getEstadoReserva());
@@ -165,6 +201,13 @@ public class ReservaService {
                     System.err.println("Advertencia: Habitación asociada a la reserva " + reservaId + " es nula o sin ID.");
                 }
                 System.out.println("Reserva " + reservaId + " cancelada exitosamente.");
+
+                auditoriaService.registrarAccion(
+                        "CANCELACION_RESERVA",
+                        "Reserva (ID: " + reserva.getId() + ") para cliente '" + reserva.getCliente().getNombres() + "' en habitación " + reserva.getHabitacion().getNumero() + " CANCELADA.",
+                        "Reserva",
+                        reserva.getId()
+                );
                 return true;
             } else {
                 System.out.println("La reserva " + reservaId + " no está en estado que permita cancelación (ACTIVA/PENDIENTE), es: " + reserva.getEstadoReserva());
@@ -172,6 +215,24 @@ public class ReservaService {
             }
         }
         System.out.println("Error: Reserva " + reservaId + " no encontrada para cancelar.");
+        return false;
+    }
+
+    @Transactional
+    public boolean eliminarReservaPorId(Long id) {
+        Optional<Reserva> reservaOptional = reservaRepository.findById(id);
+        if (reservaOptional.isPresent()) {
+            Reserva reserva = reservaOptional.get();
+            reservaRepository.deleteById(id);
+
+            auditoriaService.registrarAccion(
+                    "ELIMINACION_RESERVA",
+                    "Reserva (ID: " + reserva.getId() + ") para cliente '" + reserva.getCliente().getNombres() + " " + reserva.getCliente().getApellidos() + "' en habitación " + reserva.getHabitacion().getNumero() + " ELIMINADA.",
+                    "Reserva",
+                    reserva.getId()
+            );
+            return true;
+        }
         return false;
     }
 

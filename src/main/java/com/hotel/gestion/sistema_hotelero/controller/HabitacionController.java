@@ -39,15 +39,22 @@ public class HabitacionController {
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PostMapping("/guardar")
     public String guardarHabitacion(@ModelAttribute("habitacion") Habitacion habitacion, RedirectAttributes redirectAttributes) {
-        Optional<Habitacion> existingHabitacion = habitacionService.buscarHabitacionPorNumero(habitacion.getNumero());
-        if (existingHabitacion.isPresent() && (habitacion.getId() == null || !existingHabitacion.get().getId().equals(habitacion.getId()))) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error: Ya existe una habitación con el número " + habitacion.getNumero() + ".");
+        try {
+            if (habitacion.getId() == null) {
+                habitacionService.crearHabitacion(habitacion);
+                redirectAttributes.addFlashAttribute("successMessage", "Habitación creada exitosamente.");
+            } else {
+                habitacionService.actualizarHabitacion(habitacion);
+                redirectAttributes.addFlashAttribute("successMessage", "Habitación actualizada exitosamente.");
+            }
+            return "redirect:/habitaciones";
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error al guardar la habitación: " + e.getMessage());
+            return "redirect:/habitaciones/" + (habitacion.getId() == null ? "nueva" : "editar/" + habitacion.getId());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error inesperado al guardar la habitación: " + e.getMessage());
             return "redirect:/habitaciones/" + (habitacion.getId() == null ? "nueva" : "editar/" + habitacion.getId());
         }
-
-        habitacionService.guardarHabitacion(habitacion);
-        redirectAttributes.addFlashAttribute("successMessage", "Habitación guardada exitosamente.");
-        return "redirect:/habitaciones";
     }
 
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
@@ -59,7 +66,7 @@ public class HabitacionController {
             model.addAttribute("accion", "editar");
             return "habitacion-form";
         } else {
-            redirectAttributes.addFlashAttribute("errorMessage", "Habitación no encontrada.");
+            redirectAttributes.addFlashAttribute("errorMessage", "Habitación no encontrada para editar.");
             return "redirect:/habitaciones";
         }
     }
@@ -67,12 +74,13 @@ public class HabitacionController {
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PostMapping("/eliminar")
     public String eliminarHabitacion(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
-        Optional<Habitacion> habitacionOptional = habitacionService.buscarHabitacionPorId(id);
-        if (habitacionOptional.isPresent()) {
+        try {
             habitacionService.eliminarHabitacion(id);
             redirectAttributes.addFlashAttribute("successMessage", "Habitación eliminada exitosamente.");
-        } else {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error: Habitación no encontrada para eliminar.");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error al eliminar la habitación: " + e.getMessage());
         }
         return "redirect:/habitaciones";
     }

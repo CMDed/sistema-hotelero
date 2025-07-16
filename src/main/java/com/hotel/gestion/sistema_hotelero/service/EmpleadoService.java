@@ -18,39 +18,45 @@ public class EmpleadoService {
     private final EmpleadoRepository empleadoRepository;
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditoriaService auditoriaService;
 
     @Autowired
-    public EmpleadoService(EmpleadoRepository empleadoRepository, UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+    public EmpleadoService(EmpleadoRepository empleadoRepository, UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder, AuditoriaService auditoriaService) {
         this.empleadoRepository = empleadoRepository;
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
+        this.auditoriaService = auditoriaService;
     }
 
     @Transactional
     public Empleado registrarRecepcionista(Empleado empleado) {
-
         if (empleadoRepository.findByDni(empleado.getDni()).isPresent()) {
             throw new IllegalArgumentException("Ya existe un empleado con el DNI '" + empleado.getDni() + "'.");
         }
-
         if (empleadoRepository.findByEmail(empleado.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Ya existe un empleado con el email '" + empleado.getEmail() + "'.");
         }
-
         if (usuarioRepository.findByUsername(empleado.getUsuario().getUsername()).isPresent()) {
             throw new IllegalArgumentException("Ya existe un usuario con el nombre de usuario '" + empleado.getUsuario().getUsername() + "'.");
         }
 
         String rawPassword = empleado.getUsuario().getPassword();
-
         if (rawPassword == null || rawPassword.isEmpty()) {
             throw new IllegalArgumentException("La contraseña no puede estar vacía.");
         }
         empleado.getUsuario().setPassword(passwordEncoder.encode(rawPassword));
-
         empleado.getUsuario().setRol("ROLE_RECEPCIONISTA");
 
-        return empleadoRepository.save(empleado);
+        Empleado nuevoEmpleado = empleadoRepository.save(empleado);
+
+        auditoriaService.registrarAccion(
+                "CREACION_EMPLEADO",
+                "Nuevo recepcionista: " + nuevoEmpleado.getNombres() + " " + nuevoEmpleado.getApellidos() + " (DNI: " + nuevoEmpleado.getDni() + ")",
+                "Empleado",
+                nuevoEmpleado.getId()
+        );
+
+        return nuevoEmpleado;
     }
 
     public List<Empleado> obtenerTodosLosEmpleados() {
@@ -93,7 +99,16 @@ public class EmpleadoService {
                         usuarioExistente.setPassword(passwordEncoder.encode(usuarioActualizadoForm.getPassword()));
                     }
 
-                    return empleadoRepository.save(empleadoExistente);
+                    Empleado empleadoGuardado = empleadoRepository.save(empleadoExistente);
+
+                    auditoriaService.registrarAccion(
+                            "ACTUALIZACION_EMPLEADO",
+                            "Empleado '" + empleadoGuardado.getNombres() + " " + empleadoGuardado.getApellidos() + "' (ID: " + empleadoGuardado.getId() + ") actualizado.",
+                            "Empleado",
+                            empleadoGuardado.getId()
+                    );
+
+                    return empleadoGuardado;
                 })
                 .orElseThrow(() -> new IllegalArgumentException("Empleado con ID " + empleadoActualizado.getId() + " no encontrado para actualizar."));
     }
@@ -104,6 +119,14 @@ public class EmpleadoService {
         if (empleadoOptional.isPresent()) {
             Empleado empleado = empleadoOptional.get();
             empleadoRepository.delete(empleado);
+
+            auditoriaService.registrarAccion(
+                    "ELIMINACION_EMPLEADO",
+                    "Empleado '" + empleado.getNombres() + " " + empleado.getApellidos() + "' (ID: " + empleado.getId() + ") eliminado.",
+                    "Empleado",
+                    empleado.getId()
+            );
+
             return true;
         }
         return false;

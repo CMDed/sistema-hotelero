@@ -46,7 +46,6 @@ public class ClienteController {
         if (cliente.getId() == null) {
             Optional<Cliente> existingDni = clienteService.buscarClientePorDni(cliente.getDni());
             if (existingDni.isPresent()) {
-
                 result.addError(new FieldError("cliente", "dni", cliente.getDni(), false, null, null, "El DNI ya está registrado."));
             }
 
@@ -55,8 +54,8 @@ public class ClienteController {
             if (existingDni.isPresent() && !existingDni.get().getId().equals(cliente.getId())) {
                 result.addError(new FieldError("cliente", "dni", cliente.getDni(), false, null, null, "El DNI ya está registrado por otro cliente."));
             }
-        }
 
+        }
 
         if (result.hasErrors()) {
             if (cliente.getId() == null) {
@@ -67,12 +66,22 @@ public class ClienteController {
         }
 
         try {
-            clienteService.guardarCliente(cliente);
-            redirectAttributes.addFlashAttribute("successMessage", "Cliente guardado exitosamente.");
+            Cliente clienteGuardado;
+            if (cliente.getId() == null) {
+                clienteGuardado = clienteService.crearCliente(cliente);
+                redirectAttributes.addFlashAttribute("successMessage", "Cliente registrado exitosamente.");
+                return "redirect:/clientes/registrar";
+            } else {
+                clienteGuardado = clienteService.actualizarCliente(cliente);
+                redirectAttributes.addFlashAttribute("successMessage", "Cliente actualizado exitosamente.");
+                return "redirect:/clientes/historial?dni=" + clienteGuardado.getDni();
+            }
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             if (cliente.getId() == null) {
                 return "redirect:/clientes/registrar";
             } else {
-                return "redirect:/clientes/historial?dni=" + cliente.getDni();
+                return "redirect:/clientes/editar/" + cliente.getId();
             }
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Error al guardar el cliente: " + e.getMessage());
@@ -123,6 +132,8 @@ public class ClienteController {
         try {
             clienteService.eliminarCliente(id);
             redirectAttributes.addFlashAttribute("successMessage", "Cliente eliminado exitosamente.");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Error al eliminar el cliente: " + e.getMessage());
         }
