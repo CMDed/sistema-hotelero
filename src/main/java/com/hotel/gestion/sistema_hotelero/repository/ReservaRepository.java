@@ -16,6 +16,9 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
     List<Reserva> findByCliente(Cliente cliente);
     List<Reserva> findByClienteAndEstadoReserva(Cliente cliente, String estadoReserva);
 
+    boolean existsByClienteAndEstadoReservaIn(Cliente cliente, List<String> estadosActivos);
+
+
     long countByFechaInicioAndEstadoReserva(LocalDate fechaInicio, String estadoReserva);
     long countByFechaFinAndEstadoReserva(LocalDate fechaFin, String estadoReserva);
     long countByFechaInicioAndEstadoReservaIn(LocalDate fechaInicio, List<String> estadoReserva);

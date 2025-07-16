@@ -3,14 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Historial de Cliente - Sistema Hotelero</title>
+  <title>Gestión de Clientes - Sistema Hotelero</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     body { background-color: #f0f2f5; }
     .navbar { margin-bottom: 20px; }
     .container { margin-top: 20px; }
-    .form-section, .client-details-section { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.05); margin-bottom: 20px;}
+    .form-section, .client-details-section, .client-list-section {
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+    }
     .btn-cancelar {
         background-color: #dc3545;
         color: white;
@@ -26,6 +32,79 @@
     .badge {
         font-size: 0.85em;
         padding: 0.4em 0.8em;
+    }
+    .table thead th {
+        background-color: #007bff;
+        color: white;
+        vertical-align: middle;
+        cursor: pointer;
+    }
+    .table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+    .table .btn-sm {
+        padding: 5px 10px;
+        font-size: 0.85rem;
+    }
+    .pagination-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 30px;
+        gap: 10px;
+    }
+    .pagination-controls .page-item.active .page-link {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+    }
+    .pagination-controls .page-link {
+        color: #007bff;
+    }
+    .pagination-controls .page-link:hover {
+        color: #0056b3;
+    }
+    .no-results {
+        text-align: center;
+        color: #666;
+        margin-top: 30px;
+        font-style: italic;
+    }
+    .btn-back-main-page {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background-color: #6c757d; /* Gris */
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+        z-index: 100;
+    }
+    .btn-back-main-page:hover {
+        background-color: #5a6268;
+        color: white;
+    }
+    .search-forms-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    @media (min-width: 768px) {
+        .search-forms-container {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .search-forms-container form {
+            flex: 1;
+        }
+        .search-forms-container form:first-child {
+            margin-right: 1.5rem;
+        }
     }
   </style>
 </head>
@@ -84,29 +163,16 @@
 </nav>
 
 <div class="container">
-  <div class="form-section">
-    <h2 class="mb-4">Buscar Historial de Cliente</h2>
-
-    <div th:if="${successMessage}" class="alert alert-success" role="alert">
-      <span th:text="${successMessage}"></span>
-    </div>
-    <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
-      <span th:text="${errorMessage}"></span>
-    </div>
-
-    <form th:action="@{/clientes/historial}" method="get">
-      <div class="mb-3">
-        <label for="dni" class="form-label">DNI del Cliente:</label>
-        <input type="text" id="dni" name="dni" class="form-control" placeholder="Ingrese el DNI del cliente" required th:value="${param.dni}">
-      </div>
-      <div class="d-grid gap-2">
-        <button type="submit" class="btn btn-primary">Buscar Cliente</button>
-      </div>
-    </form>
+  <div th:if="${successMessage}" class="alert alert-success" role="alert">
+    <span th:text="${successMessage}"></span>
+  </div>
+  <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+    <span th:text="${errorMessage}"></span>
   </div>
 
   <div th:if="${cliente}" class="client-details-section">
-    <h3 class="mb-3">Datos del Cliente</h3>
+    <h2 class="mb-4" th:text="'Detalle del Cliente: ' + ${cliente.nombres} + ' ' + ${cliente.apellidos}">Detalle del Cliente</h2>
+
     <p><strong>Nombres:</strong> <span th:text="${cliente.nombres}"></span></p>
     <p><strong>Apellidos:</strong> <span th:text="${cliente.apellidos}"></span></p>
     <p><strong>DNI:</strong> <span th:text="${cliente.dni}"></span></p>
@@ -114,20 +180,23 @@
     <p><strong>Email:</strong> <span th:text="${cliente.email}"></span></p>
     <p><strong>Teléfono:</strong> <span th:text="${cliente.telefono}"></span></p>
 
-    <a th:href="@{/clientes/editar/{id}(id=${cliente.id})}" class="btn btn-warning mb-3">
-      <i class="fas fa-edit"></i> Editar Datos del Cliente
-    </a>
-    <form th:action="@{/clientes/eliminar/{id}(id=${cliente.id})}" method="post" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a este cliente? Esta acción es irreversible y podría afectar reservas.');">
-      <button type="submit" class="btn btn-danger">
-        <i class="fas fa-trash-alt"></i> Eliminar Cliente
-      </button>
-    </form>
+    <div class="d-flex align-items-center mb-3">
+      <a th:href="@{/clientes/editar/{id}(id=${cliente.id})}" class="btn btn-warning me-2">
+        <i class="fas fa-edit"></i> Editar Datos del Cliente
+      </a>
+      <form th:action="@{/clientes/eliminar/{id}(id=${cliente.id})}" method="post" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a este cliente? Esta acción es irreversible y podría afectar reservas.');">
+        <button type="submit" class="btn btn-danger">
+          <i class="fas fa-trash-alt"></i> Eliminar Cliente
+        </button>
+      </form>
+    </div>
 
-    <hr> <h3 class="mt-4">Reservas del Cliente</h3>
-    <div th:if="${cliente != null and #lists.isEmpty(reservasCliente)}" class="alert alert-info">
+    <hr>
+    <h3 class="mt-4">Reservas del Cliente</h3>
+    <div th:if="${#lists.isEmpty(reservasCliente)}" class="alert alert-info">
       Este cliente no tiene reservas registradas.
     </div>
-    <div th:if="${not #lists.isEmpty(reservasCliente)}">
+    <div th:unless="${#lists.isEmpty(reservasCliente)}">
       <table class="table table-striped table-hover">
         <thead>
         <tr>
@@ -150,11 +219,11 @@
           <td th:text="${reserva.diasEstadia}"></td>
           <td th:text="${'S/.' + #numbers.formatDecimal(reserva.totalPagar, 1, 'POINT', 2, 'COMMA')}"></td>
           <td>
-             <span th:classappend="${reserva.estadoReserva == 'ACTIVA' ? 'bg-primary' :
-                                   (reserva.estadoReserva == 'PENDIENTE' ? 'bg-info' :
-                                   (reserva.estadoReserva == 'FINALIZADA' ? 'bg-success' :
-                                   'bg-danger'))}"
-                   class="badge" th:text="${reserva.estadoReserva}"></span>
+                        <span th:classappend="${reserva.estadoReserva == 'ACTIVA' ? 'bg-primary' :
+                                              (reserva.estadoReserva == 'PENDIENTE' ? 'bg-info' :
+                                              (reserva.estadoReserva == 'FINALIZADA' ? 'bg-success' :
+                                              'bg-danger'))}"
+                              class="badge" th:text="${reserva.estadoReserva}"></span>
           </td>
           <td>
             <div th:if="${reserva.estadoReserva == 'ACTIVA' || reserva.estadoReserva == 'PENDIENTE'}">
@@ -173,25 +242,126 @@
               </form>
             </div>
             <div th:unless="${reserva.estadoReserva == 'ACTIVA' || reserva.estadoReserva == 'PENDIENTE'}">
-                <span th:classappend="${reserva.estadoReserva == 'FINALIZADA' ? 'badge bg-success' : 'badge bg-danger'}">
-                    <span th:text="${reserva.estadoReserva}"></span>
-                </span>
+                            <span th:classappend="${reserva.estadoReserva == 'FINALIZADA' ? 'badge bg-success' : 'badge bg-danger'}">
+                                <span th:text="${reserva.estadoReserva}"></span>
+                            </span>
             </div>
           </td>
         </tr>
         </tbody>
       </table>
     </div>
+    <a th:href="@{/clientes/historial}" class="btn btn-primary mt-3">Volver a la Lista de Clientes</a>
   </div>
+
+
+  <div th:unless="${cliente}" class="client-list-section">
+    <h2 class="mb-4">Lista de Clientes Registrados</h2>
+
+    <div class="search-forms-container">
+      <form th:action="@{/clientes/historial}" method="get" class="d-flex flex-grow-1">
+        <input type="text" name="search" class="form-control me-2" placeholder="Buscar por DNI, Nombres o Apellidos" th:value="${search != null ? search : ''}">
+        <button type="submit" class="btn btn-primary">Buscar</button>
+      </form>
+
+      <form th:action="@{/clientes/historial}" method="get" class="d-flex w-auto">
+        <input type="text" name="dni" class="form-control me-2" placeholder="Buscar detalle por DNI" style="max-width: 220px;">
+        <button type="submit" class="btn btn-info">Ver Detalle por DNI</button>
+      </form>
+    </div>
+
+    <hr class="my-4">
+
+    <div class="table-responsive">
+      <table class="table table-striped table-hover">
+        <thead>
+        <tr>
+          <th scope="col">
+            <a th:href="@{/clientes/historial(page=${currentPage}, size=${pageSize}, sortBy='dni', sortDir=${sortBy == 'dni' && sortDir == 'asc' ? 'desc' : 'asc'}, search=${search})}"
+               class="text-white text-decoration-none">
+              DNI <i th:class="${sortBy == 'dni' ? (sortDir == 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down') : 'fas fa-sort'}"></i>
+            </a>
+          </th>
+          <th scope="col">
+            <a th:href="@{/clientes/historial(page=${currentPage}, size=${pageSize}, sortBy='nombres', sortDir=${sortBy == 'nombres' && sortDir == 'asc' ? 'desc' : 'asc'}, search=${search})}"
+               class="text-white text-decoration-none">
+              Nombres <i th:class="${sortBy == 'nombres' ? (sortDir == 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down') : 'fas fa-sort'}"></i>
+            </a>
+          </th>
+          <th scope="col">
+            <a th:href="@{/clientes/historial(page=${currentPage}, size=${pageSize}, sortBy='apellidos', sortDir=${sortBy == 'apellidos' && sortDir == 'asc' ? 'desc' : 'asc'}, search=${search})}"
+               class="text-white text-decoration-none">
+              Apellidos <i th:class="${sortBy == 'apellidos' ? (sortDir == 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down') : 'fas fa-sort'}"></i>
+            </a>
+          </th>
+          <th scope="col">Email</th>
+          <th scope="col">Teléfono</th>
+          <th scope="col">Reservas Activas</th>
+          <th scope="col">Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="clienteItem : ${clientesPage.content}">
+          <td th:text="${clienteItem.dni}"></td>
+          <td th:text="${clienteItem.nombres}"></td>
+          <td th:text="${clienteItem.apellidos}"></td>
+          <td th:text="${clienteItem.email}"></td>
+          <td th:text="${clienteItem.telefono}"></td>
+          <td>
+            <span th:if="${clienteItem.hasActiveReservations}" class="badge bg-success">Sí <i class="fas fa-check-circle"></i></span>
+            <span th:unless="${clienteItem.hasActiveReservations}" class="badge bg-secondary">No <i class="fas fa-times-circle"></i></span>
+          </td>
+          <td>
+            <a th:href="@{/clientes/historial(id=${clienteItem.id})}" class="btn btn-info btn-sm">
+              <i class="fas fa-eye"></i> Ver Detalle
+            </a>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+      <div th:if="${clientesPage.totalElements == 0}" class="no-results">
+        <p>No se encontraron clientes.</p>
+      </div>
+    </div>
+
+    <nav aria-label="Page navigation" th:if="${clientesPage != null and clientesPage.totalPages > 0}">
+      <ul class="pagination pagination-controls">
+        <li class="page-item" th:classappend="${currentPage == 0 ? 'disabled' : ''}">
+          <a class="page-link" th:href="@{/clientes/historial(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search})}" aria-label="Previous">
+            <span aria-hidden="true">&laquo;</span>
+          </a>
+        </li>
+        <li class="page-item" th:each="i : ${#numbers.sequence(0, clientesPage.totalPages - 1)}" th:classappend="${i == currentPage ? 'active' : ''}">
+          <a class="page-link" th:href="@{/clientes/historial(page=${i}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search})}" th:text="${i + 1}"></a>
+        </li>
+        <li class="page-item" th:classappend="${currentPage == clientesPage.totalPages - 1 ? 'disabled' : ''}">
+          <a class="page-link" th:href="@{/clientes/historial(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search})}" aria-label="Next">
+            <span aria-hidden="true">&raquo;</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
       const urlParams = new URLSearchParams(window.location.search);
-      const dniFromUrl = urlParams.get('dni');
-      if (dniFromUrl) {
-          document.getElementById('dni').value = dniFromUrl;
+      const searchParam = urlParams.get('search');
+      if (searchParam) {
+          const searchInput = document.querySelector('.search-forms-container form:first-child input[name="search"]');
+          if (searchInput) {
+              searchInput.value = searchParam;
+          }
+      }
+      const dniParam = urlParams.get('dni');
+      if (dniParam) {
+          const dniInput = document.querySelector('.search-forms-container form:last-child input[name="dni"]');
+          if (dniInput) {
+              dniInput.value = dniParam;
+          }
       }
   });
 </script>

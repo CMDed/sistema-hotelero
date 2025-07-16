@@ -167,6 +167,11 @@ public class ReservaService {
         return false;
     }
 
+    public boolean tieneReservasActivas(Cliente cliente) {
+        List<String> estadosConsideradosActivos = Arrays.asList("ACTIVA", "PENDIENTE");
+        return reservaRepository.existsByClienteAndEstadoReservaIn(cliente, estadosConsideradosActivos);
+    }
+
     public Optional<Reserva> buscarReservaPorId(Long id) {
         return reservaRepository.findById(id);
     }

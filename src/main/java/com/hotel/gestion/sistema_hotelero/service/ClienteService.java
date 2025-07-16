@@ -3,11 +3,13 @@ package com.hotel.gestion.sistema_hotelero.service;
 import com.hotel.gestion.sistema_hotelero.model.Cliente;
 import com.hotel.gestion.sistema_hotelero.repository.ClienteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ClienteService {
@@ -110,5 +112,17 @@ public class ClienteService {
         } else {
             throw new IllegalArgumentException("Cliente con ID " + id + " no encontrado para eliminar.");
         }
+    }
+
+    public Page<Cliente> findAllClientes(Pageable pageable) {
+        return clienteRepository.findAll(pageable);
+    }
+
+    public Page<Cliente> searchClientes(String searchTerm, Pageable pageable) {
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return clienteRepository.findAll(pageable);
+        }
+        return clienteRepository.findByDniContainingIgnoreCaseOrNombresContainingIgnoreCaseOrApellidosContainingIgnoreCase(
+                searchTerm, searchTerm, searchTerm, pageable);
     }
 }

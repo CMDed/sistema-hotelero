@@ -5,6 +5,8 @@ import com.hotel.gestion.sistema_hotelero.model.Empleado;
 import com.hotel.gestion.sistema_hotelero.repository.AuditoriaRepository;
 import com.hotel.gestion.sistema_hotelero.repository.EmpleadoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -55,11 +57,15 @@ public class AuditoriaService {
         return auditoriaRepository.save(logEntry);
     }
 
-    public List<Auditoria> obtenerTodosLosLogs() {
-        return auditoriaRepository.findAll();
+    public Page<Auditoria> obtenerTodosLosLogs(Pageable pageable) {
+        return auditoriaRepository.findAll(pageable);
     }
 
-    public List<Auditoria> obtenerLogsPorDniEmpleado(String dni) {
-        return auditoriaRepository.findByEmpleadoDni(dni);
+    public Page<Auditoria> obtenerLogsPorDniEmpleado(String dni, Pageable pageable) {
+        return auditoriaRepository.findByEmpleadoDni(dni, pageable);
+    }
+
+    public Page<Auditoria> searchLogs(String keyword, Pageable pageable) {
+        return auditoriaRepository.findByTipoAccionContainingIgnoreCaseOrDetalleAccionContainingIgnoreCase(keyword, keyword, pageable);
     }
 }

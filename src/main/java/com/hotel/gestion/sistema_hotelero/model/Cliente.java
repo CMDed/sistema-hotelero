@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -56,4 +57,7 @@ public class Cliente {
 
     @Column(length = 20)
     private String telefono;
+
+    @Transient
+    private boolean hasActiveReservations;
 }
