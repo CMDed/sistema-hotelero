@@ -4,9 +4,12 @@ import com.hotel.gestion.sistema_hotelero.model.Cliente;
 import com.hotel.gestion.sistema_hotelero.model.Reserva;
 import com.hotel.gestion.sistema_hotelero.service.ClienteService;
 import com.hotel.gestion.sistema_hotelero.service.ReservaService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -28,43 +31,55 @@ public class ClienteController {
 
     @GetMapping("/registrar")
     public String showRegistroClienteForm(Model model) {
-        model.addAttribute("cliente", new Cliente());
+        if (!model.containsAttribute("cliente")) {
+            model.addAttribute("cliente", new Cliente());
+        }
         return "registroCliente";
     }
 
     @PostMapping("/guardar")
-    public String guardarCliente(@ModelAttribute("cliente") Cliente cliente, RedirectAttributes redirectAttributes) {
-        try {
-            boolean isNewClient = (cliente.getId() == null);
+    public String guardarCliente(@Valid @ModelAttribute("cliente") Cliente cliente,
+                                 BindingResult result,
+                                 RedirectAttributes redirectAttributes,
+                                 Model model) {
 
-            if (isNewClient) {
-                if (clienteService.existeClientePorDni(cliente.getDni())) {
-                    redirectAttributes.addFlashAttribute("errorMessage", "Error: Ya existe un cliente con este DNI.");
-                    return "redirect:/clientes/registrar";
-                }
-            } else {
-                Optional<Cliente> existingClientWithDni = clienteService.buscarClientePorDni(cliente.getDni());
-                if (existingClientWithDni.isPresent() && !existingClientWithDni.get().getId().equals(cliente.getId())) {
-                    redirectAttributes.addFlashAttribute("errorMessage", "Error: El DNI proporcionado ya pertenece a otro cliente.");
-                    return "redirect:/clientes/editar/" + cliente.getId();
-                }
+        if (cliente.getId() == null) {
+            Optional<Cliente> existingDni = clienteService.buscarClientePorDni(cliente.getDni());
+            if (existingDni.isPresent()) {
+
+                result.addError(new FieldError("cliente", "dni", cliente.getDni(), false, null, null, "El DNI ya está registrado."));
             }
 
-            clienteService.guardarCliente(cliente);
-            redirectAttributes.addFlashAttribute("successMessage", "Cliente " + (isNewClient ? "registrado" : "actualizado") + " exitosamente.");
+        } else {
+            Optional<Cliente> existingDni = clienteService.buscarClientePorDni(cliente.getDni());
+            if (existingDni.isPresent() && !existingDni.get().getId().equals(cliente.getId())) {
+                result.addError(new FieldError("cliente", "dni", cliente.getDni(), false, null, null, "El DNI ya está registrado por otro cliente."));
+            }
+        }
 
-            if (isNewClient) {
+
+        if (result.hasErrors()) {
+            if (cliente.getId() == null) {
+                return "registroCliente";
+            } else {
+                return "editarCliente";
+            }
+        }
+
+        try {
+            clienteService.guardarCliente(cliente);
+            redirectAttributes.addFlashAttribute("successMessage", "Cliente guardado exitosamente.");
+            if (cliente.getId() == null) {
                 return "redirect:/clientes/registrar";
             } else {
                 return "redirect:/clientes/historial?dni=" + cliente.getDni();
             }
-
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error al guardar cliente: " + e.getMessage());
-            if (cliente.getId() != null) {
-                return "redirect:/clientes/editar/" + cliente.getId();
-            } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error al guardar el cliente: " + e.getMessage());
+            if (cliente.getId() == null) {
                 return "redirect:/clientes/registrar";
+            } else {
+                return "redirect:/clientes/editar/" + cliente.getId();
             }
         }
     }
@@ -77,8 +92,7 @@ public class ClienteController {
             Optional<Cliente> clienteOptional = clienteService.buscarClientePorDni(dni);
             if (clienteOptional.isPresent()) {
                 Cliente cliente = clienteOptional.get();
-                model.addAttribute("clienteEncontrado", cliente);
-
+                model.addAttribute("cliente", cliente);
                 List<Reserva> reservas = reservaService.obtenerReservasPorCliente(cliente);
                 model.addAttribute("reservasCliente", reservas);
 
@@ -92,22 +106,6 @@ public class ClienteController {
         return "historialCliente";
     }
 
-    @PostMapping("/cancelar-reserva")
-    public String cancelarReserva(@RequestParam("reservaId") Long reservaId,
-                                  @RequestParam("clienteDni") String clienteDni,
-                                  RedirectAttributes redirectAttributes) {
-
-        boolean cancelado = reservaService.cancelarReserva(reservaId);
-
-        if (cancelado) {
-            redirectAttributes.addFlashAttribute("successMessage", "Reserva cancelada y habitación liberada exitosamente.");
-        } else {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error al cancelar la reserva. Es posible que no exista o no sea cancelable.");
-        }
-
-        return "redirect:/clientes/historial?dni=" + clienteDni;
-    }
-
     @GetMapping("/editar/{id}")
     public String showEditarClienteForm(@PathVariable("id") Long id, Model model, RedirectAttributes redirectAttributes) {
         Optional<Cliente> clienteOptional = clienteService.buscarClientePorId(id);
@@ -118,5 +116,16 @@ public class ClienteController {
             redirectAttributes.addFlashAttribute("errorMessage", "Cliente no encontrado para editar.");
             return "redirect:/clientes/historial";
         }
+    }
+
+    @PostMapping("/eliminar/{id}")
+    public String eliminarCliente(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            clienteService.eliminarCliente(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Cliente eliminado exitosamente.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error al eliminar el cliente: " + e.getMessage());
+        }
+        return "redirect:/clientes/historial";
     }
 }

@@ -102,21 +102,26 @@
     </form>
   </div>
 
-  <div th:if="${clienteEncontrado}" class="client-details-section">
+  <div th:if="${cliente}" class="client-details-section">
     <h3 class="mb-3">Datos del Cliente</h3>
-    <p><strong>Nombres:</strong> <span th:text="${clienteEncontrado.nombres}"></span></p>
-    <p><strong>Apellidos:</strong> <span th:text="${clienteEncontrado.apellidos}"></span></p>
-    <p><strong>DNI:</strong> <span th:text="${clienteEncontrado.dni}"></span></p>
-    <p><strong>Nacionalidad:</strong> <span th:text="${clienteEncontrado.nacionalidad}"></span></p>
-    <p><strong>Email:</strong> <span th:text="${clienteEncontrado.email}"></span></p>
-    <p><strong>Teléfono:</strong> <span th:text="${clienteEncontrado.telefono}"></span></p>
+    <p><strong>Nombres:</strong> <span th:text="${cliente.nombres}"></span></p>
+    <p><strong>Apellidos:</strong> <span th:text="${cliente.apellidos}"></span></p>
+    <p><strong>DNI:</strong> <span th:text="${cliente.dni}"></span></p>
+    <p><strong>Nacionalidad:</strong> <span th:text="${cliente.nacionalidad}"></span></p>
+    <p><strong>Email:</strong> <span th:text="${cliente.email}"></span></p>
+    <p><strong>Teléfono:</strong> <span th:text="${cliente.telefono}"></span></p>
 
-    <a th:href="@{/clientes/editar/{id}(id=${clienteEncontrado.id})}" class="btn btn-warning mb-3">
+    <a th:href="@{/clientes/editar/{id}(id=${cliente.id})}" class="btn btn-warning mb-3">
       <i class="fas fa-edit"></i> Editar Datos del Cliente
     </a>
+    <form th:action="@{/clientes/eliminar/{id}(id=${cliente.id})}" method="post" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a este cliente? Esta acción es irreversible y podría afectar reservas.');">
+      <button type="submit" class="btn btn-danger">
+        <i class="fas fa-trash-alt"></i> Eliminar Cliente
+      </button>
+    </form>
 
     <hr> <h3 class="mt-4">Reservas del Cliente</h3>
-    <div th:if="${#lists.isEmpty(reservasCliente)}" class="alert alert-info">
+    <div th:if="${cliente != null and #lists.isEmpty(reservasCliente)}" class="alert alert-info">
       Este cliente no tiene reservas registradas.
     </div>
     <div th:if="${not #lists.isEmpty(reservasCliente)}">

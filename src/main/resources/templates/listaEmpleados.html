@@ -12,6 +12,12 @@
     .container { margin-top: 20px; }
     .content-section { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.05); }
     .table th, .table td { vertical-align: middle; }
+    .badge {
+        font-size: 0.85em;
+        padding: 0.4em 0.8em;
+        margin-right: 5px;
+        margin-bottom: 5px;
+    }
   </style>
 </head>
 <body>
@@ -39,12 +45,12 @@
           <a class="nav-link" th:href="@{/clientes/historial}">Historial Cliente</a>
         </li>
         <li class="nav-item dropdown" sec:authorize="hasAnyRole('ROLE_ADMIN')">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownGestion" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <a class="nav-link dropdown-toggle active" href="#" id="navbarDropdownGestion" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             Gestión de Empleados
           </a>
           <ul class="dropdown-menu" aria-labelledby="navbarDropdownGestion">
             <li><a class="dropdown-item" th:href="@{/empleados/registrar}">Registrar Nuevo</a></li>
-            <li><a class="dropdown-item" th:href="@{/empleados/lista}">Ver Lista</a></li>
+            <li><a class="dropdown-item active" aria-current="page" th:href="@{/empleados/lista}">Ver Lista</a></li>
           </ul>
         </li>
         <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN')">
@@ -76,6 +82,9 @@
       <span th:text="${errorMessage}"></span>
     </div>
 
+    <div class="mb-3" sec:authorize="hasRole('ADMIN')"> <a th:href="@{/empleados/registrar}" class="btn btn-primary"><i class="fas fa-user-plus"></i> Registrar Nuevo Empleado</a>
+    </div>
+
     <div th:if="${#lists.isEmpty(empleados)}" class="alert alert-info">
       No hay empleados registrados.
     </div>
@@ -84,31 +93,31 @@
         <thead>
         <tr>
           <th>ID</th>
+          <th>DNI</th>
           <th>Nombres</th>
           <th>Apellidos</th>
-          <th>DNI</th>
           <th>Email</th>
           <th>Teléfono</th>
-          <th>Usuario (Login)</th>
+          <th>Usuario</th>
           <th>Rol</th>
-          <th>Acciones</th>
-        </tr>
+          <th sec:authorize="hasRole('ADMIN')">Acciones</th> </tr>
         </thead>
         <tbody>
         <tr th:each="empleado : ${empleados}">
-          <td th:text="${empleado.id}">1</td>
-          <td th:text="${empleado.nombres}">Juan</td>
-          <td th:text="${empleado.apellidos}">Perez</td>
-          <td th:text="${empleado.dni}">12345678</td>
-          <td th:text="${empleado.email}">juan.perez@example.com</td>
-          <td th:text="${empleado.telefono}">987654321</td>
-          <td th:text="${empleado.usuario.username}">juanp</td>
-          <td th:text="${empleado.usuario.rol}">ROLE_RECEPCIONISTA</td>
+          <td th:text="${empleado.id}"></td>
+          <td th:text="${empleado.dni}"></td>
+          <td th:text="${empleado.nombres}"></td>
+          <td th:text="${empleado.apellidos}"></td>
+          <td th:text="${empleado.email}"></td>
+          <td th:text="${empleado.telefono}"></td>
+          <td th:text="${empleado.usuario.username}"></td>
           <td>
-            <a th:href="@{/empleados/editar/{id}(id=${empleado.id})}" class="btn btn-warning btn-sm me-2">
-              <i class="fas fa-edit"></i> Editar
-            </a>
-            <form th:action="@{/empleados/eliminar/{id}(id=${empleado.id})}" method="post" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este empleado? Esta acción es irreversible y eliminará también su cuenta de usuario.');">
+            <span th:classappend="${empleado.usuario.rol == 'ROLE_ADMIN' ? 'bg-danger' : 'bg-secondary'}" class="badge" th:text="${empleado.usuario.rol.replace('ROLE_', '')}"></span>
+          </td>
+          <td sec:authorize="hasRole('ADMIN')"> <a th:href="@{/empleados/editar/{id}(id=${empleado.id})}" class="btn btn-warning btn-sm me-2">
+            <i class="fas fa-edit"></i> Editar
+          </a>
+            <form th:action="@{/empleados/eliminar/{id}(id=${empleado.id})}" method="post" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a este empleado? Esta acción es irreversible.');">
               <button type="submit" class="btn btn-danger btn-sm">
                 <i class="fas fa-trash-alt"></i> Eliminar
               </button>

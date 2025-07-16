@@ -16,14 +16,14 @@
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container-fluid">
-    <a class="navbar-brand" href="#">Oasis Digital</a>
+    <a class="navbar-brand" href="/dashboard">Oasis Digital</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item">
-          <a class="nav-link active" aria-current="page" th:href="@{/dashboard}">Dashboard</a>
+          <a class="nav-link" href="/dashboard">Dashboard</a>
         </li>
         <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_RECEPCIONISTA')">
           <a class="nav-link" th:href="@{/clientes/registrar}">Registro Cliente</a>
@@ -38,12 +38,12 @@
           <a class="nav-link" th:href="@{/clientes/historial}">Historial Cliente</a>
         </li>
         <li class="nav-item dropdown" sec:authorize="hasAnyRole('ROLE_ADMIN')">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownGestion" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <a class="nav-link dropdown-toggle active" href="#" id="navbarDropdownGestion" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             Gestión de Empleados
           </a>
           <ul class="dropdown-menu" aria-labelledby="navbarDropdownGestion">
             <li><a class="dropdown-item" th:href="@{/empleados/registrar}">Registrar Nuevo</a></li>
-            <li><a class="dropdown-item" th:href="@{/empleados/lista}">Ver Lista</a></li>
+            <li><a class="dropdown-item active" aria-current="page" th:href="@{/empleados/lista}">Ver Lista</a></li>
           </ul>
         </li>
         <li class="nav-item" sec:authorize="hasAnyAuthority('ROLE_ADMIN')">
@@ -78,38 +78,42 @@
     <form th:action="@{/empleados/actualizar}" th:object="${empleado}" method="post">
       <input type="hidden" th:field="*{id}" />
       <input type="hidden" th:field="*{usuario.id}" />
-      <input type="hidden" th:field="*{usuario.rol}" />
-
-
-      <div class="mb-3">
-        <label for="nombres" class="form-label">Nombres:</label>
-        <input type="text" id="nombres" th:field="*{nombres}" class="form-control" required>
-      </div>
+      <input type="hidden" th:field="*{usuario.rol}" /> <div class="mb-3">
+      <label for="nombres" class="form-label">Nombres:</label>
+      <input type="text" id="nombres" th:field="*{nombres}" class="form-control" th:classappend="${#fields.hasErrors('nombres')} ? 'is-invalid' : ''" required>
+      <div th:if="${#fields.hasErrors('nombres')}" th:errors="*{nombres}" class="invalid-feedback"></div>
+    </div>
       <div class="mb-3">
         <label for="apellidos" class="form-label">Apellidos:</label>
-        <input type="text" id="apellidos" th:field="*{apellidos}" class="form-control" required>
+        <input type="text" id="apellidos" th:field="*{apellidos}" class="form-control" th:classappend="${#fields.hasErrors('apellidos')} ? 'is-invalid' : ''" required>
+        <div th:if="${#fields.hasErrors('apellidos')}" th:errors="*{apellidos}" class="invalid-feedback"></div>
       </div>
       <div class="mb-3">
         <label for="dni" class="form-label">DNI:</label>
-        <input type="text" id="dni" th:field="*{dni}" class="form-control" required>
+        <input type="text" id="dni" th:field="*{dni}" class="form-control" th:classappend="${#fields.hasErrors('dni')} ? 'is-invalid' : ''" required>
+        <div th:if="${#fields.hasErrors('dni')}" th:errors="*{dni}" class="invalid-feedback"></div>
       </div>
       <div class="mb-3">
         <label for="email" class="form-label">Email:</label>
-        <input type="email" id="email" th:field="*{email}" class="form-control" required>
+        <input type="email" id="email" th:field="*{email}" class="form-control" th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''" required>
+        <div th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="invalid-feedback"></div>
       </div>
       <div class="mb-3">
         <label for="telefono" class="form-label">Teléfono:</label>
-        <input type="text" id="telefono" th:field="*{telefono}" class="form-control">
+        <input type="text" id="telefono" th:field="*{telefono}" class="form-control" th:classappend="${#fields.hasErrors('telefono')} ? 'is-invalid' : ''">
+        <div th:if="${#fields.hasErrors('telefono')}" th:errors="*{telefono}" class="invalid-feedback"></div>
       </div>
 
       <h4 class="mt-4 mb-3">Datos de Acceso (Usuario y Contraseña)</h4>
       <div class="mb-3">
         <label for="username" class="form-label">Nombre de Usuario (Login):</label>
-        <input type="text" id="username" th:field="*{usuario.username}" class="form-control" required>
+        <input type="text" id="username" th:field="*{usuario.username}" class="form-control" th:classappend="${#fields.hasErrors('usuario.username')} ? 'is-invalid' : ''" required>
+        <div th:if="${#fields.hasErrors('usuario.username')}" th:errors="*{usuario.username}" class="invalid-feedback"></div>
       </div>
       <div class="mb-3">
         <label for="password" class="form-label">Nueva Contraseña (dejar vacío para no cambiar):</label>
-        <input type="password" id="password" th:field="*{usuario.password}" class="form-control">
+        <input type="password" id="password" name="usuario.password" class="form-control" placeholder="Dejar vacío para no cambiar la contraseña">
+        <div th:if="${#fields.hasErrors('usuario.password')}" th:errors="*{usuario.password}" class="invalid-feedback"></div>
       </div>
       <div class="d-grid gap-2">
         <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Guardar Cambios</button>

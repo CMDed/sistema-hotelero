@@ -28,19 +28,26 @@ public class EmpleadoService {
 
     @Transactional
     public Empleado registrarRecepcionista(Empleado empleado) {
+
         if (empleadoRepository.findByDni(empleado.getDni()).isPresent()) {
-            throw new IllegalArgumentException("Ya existe un empleado con el DNI proporcionado.");
+            throw new IllegalArgumentException("Ya existe un empleado con el DNI '" + empleado.getDni() + "'.");
         }
+
+        if (empleadoRepository.findByEmail(empleado.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Ya existe un empleado con el email '" + empleado.getEmail() + "'.");
+        }
+
         if (usuarioRepository.findByUsername(empleado.getUsuario().getUsername()).isPresent()) {
-            throw new IllegalArgumentException("Ya existe un usuario con el nombre de usuario proporcionado.");
+            throw new IllegalArgumentException("Ya existe un usuario con el nombre de usuario '" + empleado.getUsuario().getUsername() + "'.");
         }
 
         String rawPassword = empleado.getUsuario().getPassword();
-        System.out.println("DEBUG: Contraseña en crudo (antes de codificar): " + rawPassword);
-        String encodedPassword = passwordEncoder.encode(rawPassword);
-        System.out.println("DEBUG: Contraseña codificada (hash): " + encodedPassword);
 
-        empleado.getUsuario().setPassword(encodedPassword);
+        if (rawPassword == null || rawPassword.isEmpty()) {
+            throw new IllegalArgumentException("La contraseña no puede estar vacía.");
+        }
+        empleado.getUsuario().setPassword(passwordEncoder.encode(rawPassword));
+
         empleado.getUsuario().setRol("ROLE_RECEPCIONISTA");
 
         return empleadoRepository.save(empleado);
@@ -58,6 +65,13 @@ public class EmpleadoService {
     public Empleado actualizarEmpleado(Empleado empleadoActualizado) {
         return empleadoRepository.findById(empleadoActualizado.getId())
                 .map(empleadoExistente -> {
+                    if (!empleadoExistente.getDni().equals(empleadoActualizado.getDni()) && empleadoRepository.findByDni(empleadoActualizado.getDni()).isPresent()) {
+                        throw new IllegalArgumentException("El DNI '" + empleadoActualizado.getDni() + "' ya está en uso por otro empleado.");
+                    }
+                    if (!empleadoExistente.getEmail().equals(empleadoActualizado.getEmail()) && empleadoRepository.findByEmail(empleadoActualizado.getEmail()).isPresent()) {
+                        throw new IllegalArgumentException("El Email '" + empleadoActualizado.getEmail() + "' ya está en uso por otro empleado.");
+                    }
+
                     empleadoExistente.setNombres(empleadoActualizado.getNombres());
                     empleadoExistente.setApellidos(empleadoActualizado.getApellidos());
                     empleadoExistente.setDni(empleadoActualizado.getDni());
@@ -76,8 +90,7 @@ public class EmpleadoService {
                     }
 
                     if (usuarioActualizadoForm.getPassword() != null && !usuarioActualizadoForm.getPassword().isEmpty()) {
-                        String encodedPassword = passwordEncoder.encode(usuarioActualizadoForm.getPassword());
-                        usuarioExistente.setPassword(encodedPassword);
+                        usuarioExistente.setPassword(passwordEncoder.encode(usuarioActualizadoForm.getPassword()));
                     }
 
                     return empleadoRepository.save(empleadoExistente);
@@ -87,11 +100,13 @@ public class EmpleadoService {
 
     @Transactional
     public boolean eliminarEmpleado(Long id) {
-        return empleadoRepository.findById(id)
-                .map(empleado -> {
-                    empleadoRepository.delete(empleado);
-                    return true;
-                }).orElse(false);
+        Optional<Empleado> empleadoOptional = empleadoRepository.findById(id);
+        if (empleadoOptional.isPresent()) {
+            Empleado empleado = empleadoOptional.get();
+            empleadoRepository.delete(empleado);
+            return true;
+        }
+        return false;
     }
 
     public long contarTodosLosEmpleados() {

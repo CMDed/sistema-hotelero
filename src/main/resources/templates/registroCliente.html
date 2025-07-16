@@ -10,6 +10,8 @@
         .navbar { margin-bottom: 20px; }
         .container { margin-top: 20px; }
         .form-section { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.05); }
+        .is-invalid { border-color: #dc3545; }
+        .invalid-feedback { display: block; }
     </style>
 </head>
 <body>
@@ -71,27 +73,40 @@
         <form th:action="@{/clientes/guardar}" th:object="${cliente}" method="post">
             <div class="mb-3">
                 <label for="nombres" class="form-label">Nombres:</label>
-                <input type="text" id="nombres" th:field="*{nombres}" class="form-control" required>
+                <input type="text" id="nombres" th:field="*{nombres}"
+                       th:classappend="${#fields.hasErrors('nombres')} ? 'is-invalid' : ''" class="form-control" required>
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('nombres')}" th:errors="*{nombres}"></div>
             </div>
             <div class="mb-3">
                 <label for="apellidos" class="form-label">Apellidos:</label>
-                <input type="text" id="apellidos" th:field="*{apellidos}" class="form-control" required>
+                <input type="text" id="apellidos" th:field="*{apellidos}"
+                       th:classappend="${#fields.hasErrors('apellidos')} ? 'is-invalid' : ''" class="form-control" required>
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('apellidos')}" th:errors="*{apellidos}"></div>
             </div>
             <div class="mb-3">
                 <label for="dni" class="form-label">DNI:</label>
-                <input type="text" id="dni" th:field="*{dni}" class="form-control" required>
+                <input type="text" id="dni" th:field="*{dni}"
+                       th:classappend="${#fields.hasErrors('dni')} ? 'is-invalid' : ''" class="form-control"
+                       required pattern="[0-9]{8}" maxlength="8" title="El DNI debe tener exactamente 8 dígitos numéricos">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('dni')}" th:errors="*{dni}"></div>
             </div>
             <div class="mb-3">
                 <label for="nacionalidad" class="form-label">Nacionalidad:</label>
-                <input type="text" id="nacionalidad" th:field="*{nacionalidad}" class="form-control">
+                <input type="text" id="nacionalidad" th:field="*{nacionalidad}"
+                       th:classappend="${#fields.hasErrors('nacionalidad')} ? 'is-invalid' : ''" class="form-control">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('nacionalidad')}" th:errors="*{nacionalidad}"></div>
             </div>
             <div class="mb-3">
                 <label for="email" class="form-label">Email:</label>
-                <input type="email" id="email" th:field="*{email}" class="form-control">
+                <input type="email" id="email" th:field="*{email}"
+                       th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''" class="form-control">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
             </div>
             <div class="mb-3">
                 <label for="telefono" class="form-label">Teléfono:</label>
-                <input type="text" id="telefono" th:field="*{telefono}" class="form-control">
+                <input type="text" id="telefono" th:field="*{telefono}"
+                       th:classappend="${#fields.hasErrors('telefono')} ? 'is-invalid' : ''" class="form-control">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('telefono')}" th:errors="*{telefono}"></div>
             </div>
             <div class="d-grid gap-2">
                 <button type="submit" class="btn btn-primary">Registrar Cliente</button>
